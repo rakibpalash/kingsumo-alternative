@@ -338,8 +338,8 @@ export default function Dashboard() {
                       <span className="text-[10px] text-red-400 animate-pulse whitespace-nowrap">Click again</span>
                     )}
                   </div>
-                  </div>{/* end desktop grid */}
-                </div>{/* end row wrapper */}
+                  </div>
+                </div>
               )
             })}
           </div>
