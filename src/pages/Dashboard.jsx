@@ -167,38 +167,38 @@ export default function Dashboard() {
       {/* Campaign list */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl overflow-hidden">
         {/* Header row */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-dark-500">
-          <h1 className="text-base font-bold text-white">Your Giveaways</h1>
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-dark-500 gap-3">
+          <h1 className="text-base font-bold text-white shrink-0">Your Giveaways</h1>
+          <div className="flex items-center gap-2 flex-1 justify-end">
             {/* Search */}
-            <div className="relative">
+            <div className="relative flex-1 max-w-xs">
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search campaigns..."
-                className="bg-dark-700 border border-dark-500 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-green transition-colors w-52"
+                placeholder="Search..."
+                className="w-full bg-dark-700 border border-dark-500 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-green transition-colors"
               />
             </div>
             <button
               onClick={() => navigate('/campaigns/new')}
-              className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold text-sm rounded-lg hover:bg-brand-green/80 transition-colors"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-brand-green text-dark-900 font-semibold text-sm rounded-lg hover:bg-brand-green/80 transition-colors shrink-0 whitespace-nowrap"
             >
-              <Plus size={14} /> New Giveaway
+              <Plus size={14} /> <span className="hidden sm:inline">New Giveaway</span><span className="sm:hidden">New</span>
             </button>
           </div>
         </div>
 
-        {/* Table header */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 px-6 py-2.5 border-b border-dark-700 bg-dark-900/40">
-          {['Title', 'Contestants', 'Entries', 'Status', 'Ends In', ''].map((h) => (
+        {/* Table header — hidden on mobile */}
+        <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 px-6 py-2.5 border-b border-dark-700 bg-dark-900/40">
+          {['Title', 'Entries', 'Status', 'Ends In', ''].map((h) => (
             <span key={h} className="text-[11px] font-semibold text-dark-500 uppercase tracking-wider">{h}</span>
           ))}
         </div>
 
         {/* Rows */}
         {filtered.length === 0 ? (
-          <div className="py-16 text-center">
+          <div className="py-16 text-center px-4">
             <Gift size={40} className="text-dark-600 mx-auto mb-3" />
             <p className="text-sm font-medium text-white mb-1">No giveaways yet</p>
             <p className="text-xs text-dark-400 mb-5">Create your first campaign to get started</p>
@@ -221,8 +221,45 @@ export default function Dashboard() {
                 <div
                   key={camp.id}
                   onClick={() => { setActiveCampaign(camp); navigate('/participants') }}
-                  className={`grid grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] gap-4 items-center px-6 py-4 cursor-pointer transition-colors hover:bg-dark-700/40 ${isActive ? 'bg-brand-green/5' : ''}`}
+                  className={`cursor-pointer transition-colors hover:bg-dark-700/40 ${isActive ? 'bg-brand-green/5' : ''}`}
                 >
+                  {/* Mobile layout */}
+                  <div className="sm:hidden px-4 py-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          {isActive && <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse shrink-0" />}
+                          <p className="text-sm font-semibold text-white truncate">{camp.title}</p>
+                        </div>
+                        <p className="text-xs text-dark-400 truncate">🏆 {camp.prize}</p>
+                        <div className="flex items-center gap-3 mt-2 flex-wrap">
+                          <StatusBadge status={camp.status} />
+                          <span className="text-xs text-dark-500 flex items-center gap-1"><Users size={11} /> {contestantCount}</span>
+                          <span className="text-xs text-dark-500">
+                            {camp.status === 'completed' ? 'Ended'
+                              : days === 0 ? <span className="text-red-400">Today</span>
+                              : days !== null ? `${days}d left` : '—'}
+                          </span>
+                        </div>
+                      </div>
+                      <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                        <ActionMenu
+                          campaign={camp}
+                          onEdit={() => navigate(`/campaigns/${camp.id}/edit`)}
+                          onDuplicate={() => duplicateCampaign(camp.id)}
+                          onView={() => { setActiveCampaign(camp); navigate('/preview') }}
+                          onDelete={() => handleDelete(camp.id)}
+                          onSetStatus={(s) => setCampaignStatus(camp.id, s)}
+                        />
+                      </div>
+                    </div>
+                    {deleteConfirm === camp.id && (
+                      <p className="text-[10px] text-red-400 animate-pulse mt-1">Tap again to confirm delete</p>
+                    )}
+                  </div>
+
+                  {/* Desktop layout */}
+                  <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center px-6 py-4">
                   {/* Title */}
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -234,12 +271,6 @@ export default function Dashboard() {
                       {camp.prizeValue && <span className="ml-1 text-dark-500">· {camp.prizeValue}</span>}
                     </p>
                     <p className="text-[10px] text-dark-600 mt-0.5">{new Date(camp.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                  </div>
-
-                  {/* Contestants */}
-                  <div className="flex items-center gap-1.5">
-                    <Users size={13} className="text-dark-500" />
-                    <span className="text-sm font-semibold text-brand-green">{contestantCount}</span>
                   </div>
 
                   {/* Entries */}
@@ -303,12 +334,12 @@ export default function Dashboard() {
                       onSetStatus={(s) => setCampaignStatus(camp.id, s)}
                     />
 
-                    {/* Delete confirm */}
                     {deleteConfirm === camp.id && (
-                      <span className="text-[10px] text-red-400 animate-pulse whitespace-nowrap">Click again to confirm</span>
+                      <span className="text-[10px] text-red-400 animate-pulse whitespace-nowrap">Click again</span>
                     )}
                   </div>
-                </div>
+                  </div>{/* end desktop grid */}
+                </div>{/* end row wrapper */}
               )
             })}
           </div>

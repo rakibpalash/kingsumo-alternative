@@ -27,13 +27,13 @@ export default function WinnerPicker() {
   return (
     <div className="max-w-2xl space-y-6">
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-3 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
           { label: 'Eligible Entries', value: validEntries.length, color: 'text-white' },
           { label: 'Total Tickets', value: pool.length, color: 'text-brand-green' },
           { label: 'Blocked Entries', value: entries.filter((e) => e.suspicious).length, color: 'text-red-400' },
         ].map(({ label, value, color }) => (
-          <div key={label} className="bg-dark-800 border border-dark-500 rounded-xl p-4 text-center">
+          <div key={label} className="bg-dark-800 border border-dark-500 rounded-xl p-3 sm:p-4 text-center">
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
             <p className="text-xs text-dark-400 mt-1">{label}</p>
           </div>

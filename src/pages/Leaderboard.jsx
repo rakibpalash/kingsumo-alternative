@@ -28,7 +28,7 @@ export default function Leaderboard() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {[
           { label: 'Total Referrals',   value: totalReferrals,                icon: Share2,    color: 'text-brand-green' },
           { label: 'Unique Referrers',  value: valid.filter(e => e.referrals > 0).length, icon: Gift, color: 'text-blue-400' },

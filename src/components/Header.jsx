@@ -1,27 +1,27 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Bell, Sun, Moon, X, Shield, ChevronRight } from 'lucide-react'
+import { Bell, Sun, Moon, X, Shield, ChevronRight, Menu } from 'lucide-react'
 import { useStore } from '../store/useStore'
 import { useTheme } from '../hooks/useTheme'
 
 const TITLES = {
-  '/dashboard':         'Dashboard',
-  '/campaigns/new':     'New Campaign',
-  '/campaigns':         'Edit Campaign',
-  '/participants':      'Participants',
-  '/winner':            'Pick Winner',
-  '/winner-announcement': 'Winner Announcement',
-  '/preview':           'Landing Page Preview',
-  '/setup':             'Setup Wizard',
-  '/settings':          'Settings',
-  '/analytics':         'Analytics',
-  '/bot-detection':     'Bot & Fraud Detection',
-  '/leaderboard':       'Referral Leaderboard',
-  '/embed':             'Embed & Share',
-  '/email-editor':      'Email Templates',
+  '/dashboard':            'Dashboard',
+  '/campaigns/new':        'New Campaign',
+  '/campaigns':            'Edit Campaign',
+  '/participants':         'Participants',
+  '/winner':               'Pick Winner',
+  '/winner-announcement':  'Winner Announcement',
+  '/preview':              'Landing Page Preview',
+  '/setup':                'Setup Wizard',
+  '/settings':             'Settings',
+  '/analytics':            'Analytics',
+  '/bot-detection':        'Bot & Fraud Detection',
+  '/leaderboard':          'Referral Leaderboard',
+  '/embed':                'Embed & Share',
+  '/email-editor':         'Email Templates',
 }
 
-export default function Header() {
+export default function Header({ onMenuToggle }) {
   const location  = useLocation()
   const navigate  = useNavigate()
   const { activeCampaign, botAlerts, dismissBotAlert } = useStore()
@@ -31,17 +31,27 @@ export default function Header() {
   const title = Object.entries(TITLES).find(([k]) => location.pathname.startsWith(k))?.[1] || 'GiveShop'
 
   return (
-    <header className="h-14 bg-dark-800 border-b border-dark-500 flex items-center justify-between px-6 shrink-0 relative z-30">
-      <div>
-        <h1 className="text-sm font-semibold text-white">{title}</h1>
-        {activeCampaign && (
-          <p className="text-xs text-dark-400 mt-0.5 leading-none">
-            Active: <span className="text-brand-green">{activeCampaign.title}</span>
-          </p>
-        )}
+    <header className="h-14 bg-dark-800 border-b border-dark-500 flex items-center justify-between px-4 sm:px-6 shrink-0 relative z-30">
+      <div className="flex items-center gap-3 min-w-0">
+        {/* Hamburger — mobile only */}
+        <button
+          onClick={onMenuToggle}
+          className="md:hidden w-8 h-8 flex items-center justify-center rounded-lg text-dark-400 hover:text-white hover:bg-dark-700 transition-colors shrink-0"
+        >
+          <Menu size={18} />
+        </button>
+
+        <div className="min-w-0">
+          <h1 className="text-sm font-semibold text-white truncate">{title}</h1>
+          {activeCampaign && (
+            <p className="text-xs text-dark-400 mt-0.5 leading-none truncate">
+              Active: <span className="text-brand-green">{activeCampaign.title}</span>
+            </p>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         {/* Theme toggle */}
         <button
           onClick={toggle}
@@ -68,7 +78,7 @@ export default function Header() {
           {notifOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setNotifOpen(false)} />
-              <div className="absolute right-0 top-10 z-20 w-80 bg-dark-700 border border-dark-500 rounded-xl shadow-2xl overflow-hidden">
+              <div className="absolute right-0 top-10 z-20 w-72 sm:w-80 bg-dark-700 border border-dark-500 rounded-xl shadow-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 border-b border-dark-600">
                   <span className="text-sm font-semibold text-white">Notifications</span>
                   {botAlerts.length > 0 && (
