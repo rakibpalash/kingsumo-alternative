@@ -1,8 +1,9 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Plus, Users, Trophy, Eye, Settings, Zap, Gift,
-  BarChart2, Shield, Share2, Code, Megaphone, Mail, X
+  BarChart2, Shield, Share2, Code, Megaphone, Mail, X, LogOut
 } from 'lucide-react'
+import { useStore } from '../store/useStore'
 
 const NAV_SECTIONS = [
   {
@@ -46,6 +47,8 @@ const NAV_SECTIONS = [
 ]
 
 export default function Sidebar({ open, onClose }) {
+  const { user, signOut } = useStore()
+
   return (
     <>
       {/* Mobile backdrop */}
@@ -112,13 +115,25 @@ export default function Sidebar({ open, onClose }) {
           ))}
         </nav>
 
-        {/* Plan badge */}
-        <div className="px-4 py-4 border-t border-dark-500">
+        {/* Plan badge + user + sign out */}
+        <div className="px-4 py-4 border-t border-dark-500 space-y-2">
           <div className="bg-dark-700 rounded-lg p-3">
             <p className="text-xs text-dark-400 mb-1">Current Plan</p>
             <p className="text-sm font-semibold text-brand-green">Pro Plan</p>
             <p className="text-xs text-dark-400 mt-1">All features unlocked</p>
           </div>
+          {user && (
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[11px] text-dark-500 truncate">{user.email}</p>
+              <button
+                onClick={signOut}
+                title="Sign out"
+                className="shrink-0 w-7 h-7 flex items-center justify-center text-dark-500 hover:text-red-400 hover:bg-dark-600 rounded-lg transition-colors"
+              >
+                <LogOut size={13} />
+              </button>
+            </div>
+          )}
         </div>
       </aside>
     </>
