@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Trophy, Users, TrendingUp, AlertTriangle,
@@ -27,6 +27,8 @@ function StatusBadge({ status }) {
 
 function ActionMenu({ campaign, onEdit, onDuplicate, onView, onDelete, onSetStatus }) {
   const [open, setOpen] = useState(false)
+  const [dropPos, setDropPos] = useState({ top: 0, right: 0 })
+  const btnRef = useRef(null)
 
   const items = [
     { label: 'Edit',       icon: Edit2,      action: onEdit,      color: '' },
@@ -37,18 +39,34 @@ function ActionMenu({ campaign, onEdit, onDuplicate, onView, onDelete, onSetStat
     { label: 'Delete',     icon: Trash2,      action: onDelete,    color: 'text-red-400' },
   ]
 
+  const handleOpen = (e) => {
+    e.stopPropagation()
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setDropPos({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right,
+      })
+    }
+    setOpen(!open)
+  }
+
   return (
-    <div className="relative">
+    <div>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+        ref={btnRef}
+        onClick={handleOpen}
         className="w-8 h-8 flex items-center justify-center rounded-lg text-dark-400 hover:text-white hover:bg-dark-600 transition-colors"
       >
         <MoreVertical size={15} />
       </button>
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-9 z-20 w-48 bg-dark-700 border border-dark-500 rounded-xl shadow-xl overflow-hidden">
+          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
+          <div
+            className="fixed z-50 w-48 bg-dark-700 border border-dark-500 rounded-xl shadow-2xl overflow-hidden"
+            style={{ top: dropPos.top, right: dropPos.right }}
+          >
             {items.map(({ label, icon: Icon, action, color }) => (
               <button
                 key={label}

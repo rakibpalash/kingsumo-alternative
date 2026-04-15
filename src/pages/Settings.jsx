@@ -2,7 +2,8 @@ import { useState } from 'react'
 import {
   Save, Check, Eye, EyeOff, Trash2, Monitor, Lock, Key,
   Upload, RefreshCw, Copy, Plus, ExternalLink, Shield,
-  BarChart2, Mail, Zap, BookOpen, AlertTriangle, CheckCircle, XCircle, Clock
+  BarChart2, Mail, Zap, BookOpen, AlertTriangle, CheckCircle, XCircle, Clock,
+  Loader, ChevronDown, Link2, List
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
@@ -322,30 +323,253 @@ function BillingTab() {
 }
 
 /* ─── Tab: Integrations ────────────────────────────────────── */
+
+// Each service defines exactly what credentials it needs and how to find them
 const EMAIL_INTEGRATIONS = [
-  { id: 'sendfox',    name: 'SendFox',        logo: '📧', description: 'A better, more affordable email tool.',          placeholder: 'SendFox API key' },
-  { id: 'zapier',     name: 'Zapier',          logo: '⚡', description: 'Automate GiveShop with 5,000+ apps.',            placeholder: 'Zapier webhook URL' },
-  { id: 'mailchimp',  name: 'Mailchimp',       logo: '🐵', description: 'Sync new entrants to your Mailchimp lists.',     placeholder: 'Mailchimp API key' },
-  { id: 'klaviyo',    name: 'Klaviyo',         logo: '📊', description: 'Sync entrants to Klaviyo flows and lists.',      placeholder: 'Klaviyo private API key' },
-  { id: 'convertkit', name: 'ConvertKit',      logo: '✉️', description: 'Add entrants directly to ConvertKit sequences.', placeholder: 'ConvertKit API key' },
-  { id: 'activecamp', name: 'ActiveCampaign',  logo: '🎯', description: 'Sync contacts and automate follow-ups.',         placeholder: 'ActiveCampaign API key' },
+  {
+    id: 'mailchimp',
+    name: 'Mailchimp',
+    logo: '🐵',
+    description: 'Sync new entrants to your Mailchimp audience automatically.',
+    docsUrl: 'https://mailchimp.com/help/about-api-keys/',
+    fields: [
+      { key: 'apiKey', label: 'API Key', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx-us1', hint: 'Mailchimp → Account → Extras → API Keys', type: 'password' },
+    ],
+    hasListSelect: true,
+    mockLists: ['Newsletter', 'Giveaway Subscribers', 'All Contacts'],
+  },
+  {
+    id: 'klaviyo',
+    name: 'Klaviyo',
+    logo: '📊',
+    description: 'Sync entrants to Klaviyo lists and trigger flows.',
+    docsUrl: 'https://help.klaviyo.com/hc/en-us/articles/115005062267',
+    fields: [
+      { key: 'apiKey', label: 'Private API Key', placeholder: 'pk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Klaviyo → Account → Settings → API Keys → Create Private Key', type: 'password' },
+    ],
+    hasListSelect: true,
+    mockLists: ['Giveaway Entrants', 'Newsletter', 'VIP Customers'],
+  },
+  {
+    id: 'convertkit',
+    name: 'ConvertKit',
+    logo: '✉️',
+    description: 'Add entrants to ConvertKit forms and sequences.',
+    docsUrl: 'https://developers.convertkit.com/',
+    fields: [
+      { key: 'apiKey',    label: 'API Key',    placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxx',        hint: 'ConvertKit → Settings → Advanced', type: 'password' },
+      { key: 'apiSecret', label: 'API Secret', placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Same page as API Key', type: 'password' },
+    ],
+    hasListSelect: true,
+    mockLists: ['Giveaway Form', 'Newsletter Sequence', 'Welcome Sequence'],
+  },
+  {
+    id: 'activecamp',
+    name: 'ActiveCampaign',
+    logo: '🎯',
+    description: 'Sync contacts and trigger automation workflows.',
+    docsUrl: 'https://help.activecampaign.com/hc/en-us/articles/207317590',
+    fields: [
+      { key: 'accountUrl', label: 'Account URL', placeholder: 'https://youraccountname.api-us1.com', hint: 'ActiveCampaign → Settings → Developer', type: 'text' },
+      { key: 'apiKey',     label: 'API Key',      placeholder: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx', hint: 'Same page as Account URL', type: 'password' },
+    ],
+    hasListSelect: true,
+    mockLists: ['Giveaway List', 'Main Newsletter', 'Customers'],
+  },
+  {
+    id: 'sendfox',
+    name: 'SendFox',
+    logo: '📧',
+    description: 'Add entrants to your SendFox lists.',
+    docsUrl: 'https://sendfox.com/docs',
+    fields: [
+      { key: 'apiKey', label: 'Personal Access Token', placeholder: 'eyJ0eXAiOiJKV1QiLCJhbGciOi...', hint: 'SendFox → Account → API', type: 'password' },
+    ],
+    hasListSelect: true,
+    mockLists: ['Giveaway List', 'Newsletter'],
+  },
+  {
+    id: 'zapier',
+    name: 'Zapier',
+    logo: '⚡',
+    description: 'Trigger any Zapier automation when a contestant enters.',
+    docsUrl: 'https://zapier.com/apps/webhook/integrations',
+    fields: [
+      { key: 'webhookUrl', label: 'Zapier Webhook URL', placeholder: 'https://hooks.zapier.com/hooks/catch/...', hint: 'In Zapier: New Zap → Trigger: Webhooks by Zapier → Catch Hook → copy URL here', type: 'text' },
+    ],
+    hasListSelect: false,
+  },
 ]
 
-const STATUS_ICON = {
-  connected: <CheckCircle size={13} className="text-brand-green" />,
-  error:     <XCircle    size={13} className="text-red-400" />,
-  idle:      <Clock      size={13} className="text-dark-500" />,
+function IntegrationCard({ svc, conn, onConnect, onDisconnect }) {
+  const [expanded, setExpanded]   = useState(false)
+  const [inputs, setInputs]       = useState({})
+  const [verifying, setVerifying] = useState(false)
+  const [error, setError]         = useState('')
+  const [selectedList, setSelectedList] = useState(conn?.list || '')
+  const isConnected = conn?.connected
+
+  const handleVerify = () => {
+    // Check all required fields are filled
+    const missing = svc.fields.find((f) => !inputs[f.key]?.trim())
+    if (missing) { setError(`${missing.label} is required`); return }
+    setError('')
+    setVerifying(true)
+    // Simulate API verification (1.5s)
+    setTimeout(() => {
+      setVerifying(false)
+      const maskedInputs = Object.fromEntries(
+        svc.fields.map((f) => [f.key, inputs[f.key].replace(/.(?=.{4})/g, '•')])
+      )
+      onConnect({ ...maskedInputs, list: selectedList, syncEnabled: true })
+      setExpanded(false)
+      setInputs({})
+    }, 1500)
+  }
+
+  const handleOpen = () => {
+    if (isConnected) return
+    setExpanded((v) => !v)
+    setError('')
+  }
+
+  return (
+    <div className={`border rounded-xl transition-all ${isConnected ? 'border-brand-green/30 bg-brand-green/5' : expanded ? 'border-dark-400' : 'border-dark-600'}`}>
+      {/* Row */}
+      <div className="flex items-center gap-3 px-4 py-3.5">
+        <span className="text-2xl shrink-0">{svc.logo}</span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-semibold text-white">{svc.name}</p>
+            {isConnected && (
+              <>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-brand-green/20 text-brand-green">
+                  <CheckCircle size={9} /> Connected
+                </span>
+                {conn?.list && (
+                  <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-dark-600 text-dark-300">
+                    <List size={9} /> {conn.list}
+                  </span>
+                )}
+              </>
+            )}
+          </div>
+          <p className="text-xs text-dark-400 mt-0.5">{svc.description}</p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {isConnected ? (
+            <button
+              onClick={() => onDisconnect()}
+              className="text-xs px-3 py-1.5 border border-dark-600 text-dark-400 hover:text-red-400 hover:border-red-800/50 rounded-lg transition-colors"
+            >
+              Disconnect
+            </button>
+          ) : (
+            <button
+              onClick={handleOpen}
+              className={`text-xs font-semibold px-4 py-1.5 rounded-lg transition-colors ${expanded ? 'bg-dark-600 text-white' : 'bg-brand-green text-dark-900 hover:bg-brand-green/80'}`}
+            >
+              {expanded ? 'Cancel' : 'Connect'}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Expand panel */}
+      {expanded && !isConnected && (
+        <div className="border-t border-dark-600 px-4 py-4 space-y-3">
+          {/* How-to hint */}
+          <div className="flex items-start gap-2 bg-dark-700/60 rounded-lg px-3 py-2.5">
+            <Key size={13} className="text-brand-green mt-0.5 shrink-0" />
+            <div className="text-xs text-dark-300 leading-relaxed">
+              <span className="font-semibold text-white">Where to find your credentials: </span>
+              {svc.fields.map((f, i) => (
+                <span key={f.key}>{f.hint}{i < svc.fields.length - 1 ? ' · ' : ''}</span>
+              ))}
+              {svc.docsUrl && (
+                <a href={svc.docsUrl} target="_blank" rel="noreferrer"
+                  className="ml-1 text-brand-green hover:underline inline-flex items-center gap-0.5">
+                  Docs <ExternalLink size={10} />
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Fields */}
+          <div className="space-y-2.5">
+            {svc.fields.map((f) => (
+              <div key={f.key}>
+                <label className="block text-xs text-dark-400 mb-1.5">{f.label}</label>
+                <input
+                  type={f.type === 'password' ? 'password' : 'text'}
+                  autoFocus={f.key === svc.fields[0].key}
+                  value={inputs[f.key] || ''}
+                  onChange={(e) => { setInputs((p) => ({ ...p, [f.key]: e.target.value })); setError('') }}
+                  onKeyDown={(e) => e.key === 'Enter' && !verifying && handleVerify()}
+                  placeholder={f.placeholder}
+                  className={`${inputCls} font-mono text-xs`}
+                />
+              </div>
+            ))}
+          </div>
+
+          {/* List select (shown inline before connecting) */}
+          {svc.hasListSelect && (
+            <div>
+              <label className="block text-xs text-dark-400 mb-1.5">
+                <List size={11} className="inline mr-1" />
+                Which list should new entrants be added to?
+              </label>
+              <div className="relative">
+                <select
+                  value={selectedList}
+                  onChange={(e) => setSelectedList(e.target.value)}
+                  className={`${inputCls} pr-8 appearance-none`}
+                >
+                  <option value="">— Select a list —</option>
+                  {svc.mockLists.map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+                <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
+          {error && <p className="text-xs text-red-400">{error}</p>}
+
+          <button
+            onClick={handleVerify}
+            disabled={verifying}
+            className="flex items-center gap-2 px-5 py-2 bg-brand-green text-dark-900 font-semibold text-sm rounded-lg hover:bg-brand-green/80 transition-colors disabled:opacity-60"
+          >
+            {verifying
+              ? <><Loader size={13} className="animate-spin" /> Verifying…</>
+              : <><Link2 size={13} /> Verify &amp; Connect</>}
+          </button>
+        </div>
+      )}
+
+      {/* Connected detail row */}
+      {isConnected && (
+        <div className="border-t border-dark-700 px-4 py-2.5 flex items-center gap-4 flex-wrap">
+          {svc.fields.map((f) => conn[f.key] && (
+            <span key={f.key} className="text-[10px] text-dark-500 font-mono">{f.label}: {conn[f.key]}</span>
+          ))}
+          {conn.list && (
+            <span className="text-[10px] text-dark-400">Syncing to: <span className="text-brand-green">{conn.list}</span></span>
+          )}
+        </div>
+      )}
+    </div>
+  )
 }
 
 function IntegrationsTab() {
-  const { integrationConnections, integrationHealth, connectIntegration, disconnectIntegration, trackingPixels, saveTrackingPixels, webhookConfig, saveWebhook } = useStore()
+  const { integrationConnections, connectIntegration, disconnectIntegration, trackingPixels, saveTrackingPixels, webhookConfig, saveWebhook } = useStore()
   const [customLogo, setCustomLogo] = useState(null)
   const [pixels, setPixels] = useState({ fbPixelId: trackingPixels?.fbPixelId || '', gaId: trackingPixels?.gaId || '', gtmId: trackingPixels?.gtmId || '' })
   const [pixelSaved, setPixelSaved] = useState(false)
   const [webhook, setWebhook] = useState({ url: webhookConfig?.url || '', events: webhookConfig?.events || { 'entry.created': true, 'winner.picked': true, 'campaign.ended': false }, secret: webhookConfig?.secret || '' })
   const [webhookSaved, setWebhookSaved] = useState(false)
-  const [apiInputs, setApiInputs] = useState({})
-  const [expandedService, setExpandedService] = useState(null)
   const [testingWebhook, setTestingWebhook] = useState(false)
 
   const handleSavePixels = () => {
@@ -364,19 +588,6 @@ function IntegrationsTab() {
     if (!webhook.url) return
     setTestingWebhook(true)
     setTimeout(() => setTestingWebhook(false), 1500)
-  }
-
-  const handleConnect = (id) => {
-    const key = apiInputs[id] || ''
-    if (!key.trim()) { setExpandedService(id); return }
-    connectIntegration(id, { apiKey: key.replace(/.(?=.{4})/g, '•'), syncEnabled: true })
-    setExpandedService(null)
-    setApiInputs((p) => ({ ...p, [id]: '' }))
-  }
-
-  const handleDisconnect = (id) => {
-    disconnectIntegration(id)
-    setExpandedService(null)
   }
 
   return (
@@ -402,66 +613,15 @@ function IntegrationsTab() {
       {/* Email Integrations */}
       <SectionCard title="Email Integrations" description="Sync new contestants to your ESP automatically after every entry.">
         <div className="space-y-2">
-          {EMAIL_INTEGRATIONS.map(({ id, name, logo, description, placeholder }) => {
-            const conn = integrationConnections?.[id]
-            const health = integrationHealth?.[id]
-            const isConnected = conn?.connected
-            const isExpanded = expandedService === id
-
-            return (
-              <div key={id} className={`border rounded-xl transition-colors ${isConnected ? 'border-brand-green/20 bg-brand-green/5' : 'border-dark-600'}`}>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <span className="text-xl shrink-0">{logo}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-white">{name}</p>
-                      {health && STATUS_ICON[health.status]}
-                      {isConnected && health?.lastSync && (
-                        <span className="text-[10px] text-dark-500">Synced {new Date(health.lastSync).toLocaleDateString()}</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-dark-400">{description}</p>
-                  </div>
-                  {isConnected ? (
-                    <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-[10px] text-brand-green font-medium">Connected</span>
-                      <button
-                        onClick={() => handleDisconnect(id)}
-                        className="text-xs px-3 py-1.5 border border-dark-500 text-dark-400 hover:text-red-400 hover:border-red-800/50 rounded-lg transition-colors"
-                      >
-                        Disconnect
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setExpandedService(isExpanded ? null : id)}
-                      className="text-xs font-semibold px-4 py-1.5 bg-brand-green text-dark-900 hover:bg-brand-green/80 rounded-lg transition-colors shrink-0"
-                    >
-                      Connect
-                    </button>
-                  )}
-                </div>
-                {isExpanded && !isConnected && (
-                  <div className="px-4 pb-4 flex gap-2">
-                    <input
-                      autoFocus
-                      value={apiInputs[id] || ''}
-                      onChange={(e) => setApiInputs((p) => ({ ...p, [id]: e.target.value }))}
-                      onKeyDown={(e) => e.key === 'Enter' && handleConnect(id)}
-                      placeholder={placeholder}
-                      className={`${inputCls} flex-1`}
-                    />
-                    <button onClick={() => handleConnect(id)} className="px-4 py-2 bg-brand-green text-dark-900 font-semibold text-sm rounded-lg hover:bg-brand-green/80 transition-colors shrink-0">
-                      Save
-                    </button>
-                    <button onClick={() => setExpandedService(null)} className="px-3 py-2 border border-dark-500 text-dark-400 rounded-lg text-sm hover:text-white transition-colors">
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
-            )
-          })}
+          {EMAIL_INTEGRATIONS.map((svc) => (
+            <IntegrationCard
+              key={svc.id}
+              svc={svc}
+              conn={integrationConnections?.[svc.id]}
+              onConnect={(data) => connectIntegration(svc.id, data)}
+              onDisconnect={() => disconnectIntegration(svc.id)}
+            />
+          ))}
         </div>
       </SectionCard>
 

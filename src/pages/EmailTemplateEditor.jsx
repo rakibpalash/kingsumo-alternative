@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useStore } from '../store/useStore'
-import { Mail, Eye, Save, Check, Send } from 'lucide-react'
+import { Mail, Eye, Save, Check, Send, Edit3 } from 'lucide-react'
 
 const TEMPLATES = [
   {
@@ -120,7 +120,7 @@ export default function EmailTemplateEditor() {
           <div className="flex items-center gap-2 flex-wrap">
             <button onClick={() => setPreview(false)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${!preview ? 'bg-brand-green text-dark-900' : 'text-dark-400 hover:text-white border border-dark-500'}`}>
-              <Bold size={12} /> Edit
+              <Edit3 size={12} /> Edit
             </button>
             <button onClick={() => setPreview(true)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${preview ? 'bg-brand-green text-dark-900' : 'text-dark-400 hover:text-white border border-dark-500'}`}>
