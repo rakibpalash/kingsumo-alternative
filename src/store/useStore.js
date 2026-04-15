@@ -237,12 +237,12 @@ export const useStore = create(
       },
 
       // ── Winner ──
-      pickWinner: () => {
+      pickWinner: (preSelected) => {
         const { entries, activeCampaign } = get()
         const valid = entries.filter((e) => !e.suspicious)
         if (!valid.length) return null
         const pool   = valid.flatMap((e) => Array(e.entries).fill(e))
-        const winner = pool[Math.floor(Math.random() * pool.length)]
+        const winner = preSelected || pool[Math.floor(Math.random() * pool.length)]
         const winnerData = { ...winner, pickedAt: new Date().toISOString(), proofUrl: `giveshop.app/proof/${Date.now()}` }
         set((s) => ({
           winner: winnerData,
