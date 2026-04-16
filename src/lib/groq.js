@@ -1,11 +1,12 @@
 import Groq from 'groq-sdk'
 
-const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY,
-  dangerouslyAllowBrowser: true,
-})
-
 const MODEL = 'llama-3.3-70b-versatile'
+
+function getGroq() {
+  const apiKey = import.meta.env.VITE_GROQ_API_KEY
+  if (!apiKey) throw new Error('VITE_GROQ_API_KEY not configured')
+  return new Groq({ apiKey, dangerouslyAllowBrowser: true })
+}
 
 export async function generateTitle({ prizeName, prizeValue, runnerName }, onChunk) {
   const prompt = `Generate a short, catchy giveaway title for this contest:
@@ -14,7 +15,7 @@ export async function generateTitle({ prizeName, prizeValue, runnerName }, onChu
 
 Output ONLY the title — one line, no quotes, no labels, max 10 words.`
 
-  const stream = await groq.chat.completions.create({
+  const stream = await getGroq().chat.completions.create({
     model: MODEL,
     max_tokens: 30,
     stream: true,
@@ -37,7 +38,7 @@ export async function generateDescription({ title, prizeName, prizeValue, runner
 
 Write 2-3 short exciting paragraphs. Be persuasive and highlight the prize. Max 180 words. Output only the description text, no headings or labels.`
 
-  const stream = await groq.chat.completions.create({
+  const stream = await getGroq().chat.completions.create({
     model: MODEL,
     max_tokens: 400,
     stream: true,
@@ -64,7 +65,7 @@ export async function generateRules({ prizeName, runnerName, runnerUrl, endsAt, 
 
 Write exactly 6 numbered rules covering: eligibility, entry, winner selection, prize, disqualification, general terms. Output only the numbered rules, no extra text.`
 
-  const stream = await groq.chat.completions.create({
+  const stream = await getGroq().chat.completions.create({
     model: MODEL,
     max_tokens: 500,
     stream: true,
