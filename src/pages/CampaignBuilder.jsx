@@ -144,17 +144,32 @@ const DEFAULT_ENTRY_ACTIONS = Object.entries(ENTRY_ACTION_CONFIG).map(([type, cf
   entries: 2,
 }))
 
-function SectionHeader({ number, icon: Icon, title }) {
+function Section({ number, icon: Icon, title, defaultOpen = true, children }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
-    <h2 className="text-base font-semibold text-white mb-4 flex items-center gap-2">
-      <span className="w-5 h-5 rounded-full bg-brand-green text-dark-900 text-xs font-bold flex items-center justify-center shrink-0">
-        {number}
-      </span>
-      {Icon && <Icon size={15} className="text-brand-green shrink-0" />}
-      {title}
-    </h2>
+    <div className="bg-dark-800 border border-dark-500 rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-6 py-4 hover:bg-dark-700/40 transition-colors text-left"
+      >
+        <span className="w-5 h-5 rounded-full bg-brand-green text-dark-900 text-xs font-bold flex items-center justify-center shrink-0">
+          {number}
+        </span>
+        {Icon && <Icon size={15} className="text-brand-green shrink-0" />}
+        <span className="text-base font-semibold text-white flex-1">{title}</span>
+        <ChevronRight
+          size={16}
+          className={`text-dark-400 transition-transform duration-200 ${open ? 'rotate-90' : ''}`}
+        />
+      </button>
+      {open && <div className="px-6 pb-6">{children}</div>}
+    </div>
   )
 }
+
+// Keep SectionHeader as no-op shim so old callsites don't break
+function SectionHeader() { return null }
 
 function InputField({ label, required, error, children }) {
   return (
@@ -395,8 +410,7 @@ export default function CampaignBuilder() {
       )}
 
       {/* ── 1. Giveaway Information ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="1" title="Giveaway Information" />
+      <Section number="1" title="Giveaway Information">
 
         {/* Competition Information heading */}
         <p className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Competition information</p>
@@ -563,11 +577,10 @@ export default function CampaignBuilder() {
             </div>
           </div>
         </div>
-      </div>
+      </Section>
 
       {/* ── 2. Sharing ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="2" title="Sharing" />
+      <Section number="2" title="Sharing" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Click to select the platforms you want your contestants to use to share your giveaway.</p>
         <div className="flex items-center gap-3 flex-wrap">
           {SHARING_PLATFORMS.map(({ key, label, bg, text }) => {
@@ -586,11 +599,10 @@ export default function CampaignBuilder() {
             )
           })}
         </div>
-      </div>
+      </Section>
 
       {/* ── 3. Bonus Entries ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="3" icon={Zap} title="Bonus Entries" />
+      <Section number="3" icon={Zap} title="Bonus Entries" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">These are actions a contestant can take to get even more entries.</p>
 
         {/* Expanded entry action cards */}
@@ -671,11 +683,10 @@ export default function CampaignBuilder() {
             ))}
           </s-select>
         </div>
-      </div>
+      </Section>
 
       {/* ── 4. Integrations ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="4" icon={PlugZap} title="Integrations" />
+      <Section number="4" icon={PlugZap} title="Integrations" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Send new contestant data to third-party services automatically.</p>
 
         {/* Added integrations */}
@@ -745,11 +756,10 @@ export default function CampaignBuilder() {
             Add an Integration
           </s-button>
         )}
-      </div>
+      </Section>
 
       {/* ── 5. Rules and Terms ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="5" icon={FileText} title="Rules and Terms" />
+      <Section number="5" icon={FileText} title="Rules and Terms" defaultOpen={false}>
         <div className="space-y-4">
           {/* Quick Template Buttons */}
           <div>
@@ -825,11 +835,10 @@ export default function CampaignBuilder() {
             Rules are displayed on your giveaway landing page. A link to your full T&amp;C appears beneath the entry form.
           </p>
         </div>
-      </div>
+      </Section>
 
       {/* ── 6. Invisible reCAPTCHA ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="6" icon={Shield} title="Invisible reCAPTCHA" />
+      <Section number="6" icon={Shield} title="Invisible reCAPTCHA" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">
           Enabling <span className="text-brand-green cursor-pointer hover:underline">invisible reCAPTCHA</span> helps reduce spam signups by bot mitigation technology.
         </p>
@@ -838,11 +847,10 @@ export default function CampaignBuilder() {
           checked={form.recaptcha || undefined}
           onChange={() => set('recaptcha', !form.recaptcha)}
         />
-      </div>
+      </Section>
 
       {/* ── 7. Marketing Consent ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="7" title="Marketing Consent" />
+      <Section number="7" title="Marketing Consent" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">
           When enabled, entrants will see an optional checkbox to consent to marketing emails. This helps build trust and improves deliverability. Recommended for GDPR, CAN, and other regulations.
         </p>
@@ -854,11 +862,10 @@ export default function CampaignBuilder() {
         <p className="text-xs text-dark-500">
           Consent notice is included in your ESP report. See integration details in Section 4 for ESP-specific behavior.
         </p>
-      </div>
+      </Section>
 
       {/* ── 8. Password Protection ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="8" icon={Lock} title="Password Protection" />
+      <Section number="8" icon={Lock} title="Password Protection" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Restrict your giveaway to only people who have the password — great for exclusive or invite-only campaigns.</p>
         <s-checkbox
           label="Enable password protection"
@@ -875,11 +882,10 @@ export default function CampaignBuilder() {
             />
           </div>
         )}
-      </div>
+      </Section>
 
       {/* ── 9. Geographic Restrictions ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="9" icon={MapPin} title="Geographic Restrictions" />
+      <Section number="9" icon={MapPin} title="Geographic Restrictions" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Limit entries to specific countries. Useful for prize fulfilment, legal compliance, or regional campaigns.</p>
         <s-checkbox
           label="Restrict by country"
@@ -914,11 +920,10 @@ export default function CampaignBuilder() {
             )}
           </div>
         )}
-      </div>
+      </Section>
 
       {/* ── 10. Age Verification ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="10" icon={UserCheck} title="Age Verification" />
+      <Section number="10" icon={UserCheck} title="Age Verification" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Require entrants to confirm they meet a minimum age — important for legal compliance in many regions.</p>
         <s-checkbox
           label="Require age confirmation"
@@ -942,11 +947,10 @@ export default function CampaignBuilder() {
             />
           </div>
         )}
-      </div>
+      </Section>
 
       {/* ── 11. Referral Tracking ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="11" icon={Share2} title="Referral Tracking" />
+      <Section number="11" icon={Share2} title="Referral Tracking" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Auto-generate unique referral links for each entrant. When someone signs up via a referral link, both parties get bonus entries.</p>
         <s-checkbox
           label="Enable referral tracking"
@@ -966,11 +970,10 @@ export default function CampaignBuilder() {
             />
           </div>
         )}
-      </div>
+      </Section>
 
       {/* ── 12. A/B Testing ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="12" icon={FlaskConical} title="A/B Testing" />
+      <Section number="12" icon={FlaskConical} title="A/B Testing" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Split traffic between two landing page variants to see which converts better. The winner is determined automatically.</p>
         <s-checkbox
           label="Enable A/B test"
@@ -1024,11 +1027,10 @@ export default function CampaignBuilder() {
             </div>
           </div>
         )}
-      </div>
+      </Section>
 
       {/* ── 13. Custom Entry Fields ── */}
-      <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
-        <SectionHeader number="13" icon={Sliders} title="Custom Entry Fields" />
+      <Section number="13" icon={Sliders} title="Custom Entry Fields" defaultOpen={false}>
         <p className="text-xs text-dark-400 mb-4">Collect extra data from entrants — phone number, shipping address, survey answers, etc.</p>
 
         {form.customFields.length > 0 && (
@@ -1078,7 +1080,7 @@ export default function CampaignBuilder() {
         >
           Add Custom Field
         </s-button>
-      </div>
+      </Section>
 
       {/* ── Submit ── */}
       <div className="flex items-center gap-3 pb-6">
