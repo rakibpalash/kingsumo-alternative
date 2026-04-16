@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Trophy, Users, TrendingUp, AlertTriangle,
   MoreVertical, Edit2, Copy, Eye, Trash2, Megaphone, Shield,
-  X, ChevronRight, Gift, BarChart2
+  X, ChevronRight, Gift, BarChart2, Rocket, CheckCircle2, Circle,
+  Zap, QrCode, Mail
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
@@ -85,6 +86,64 @@ function ActionMenu({ campaign, onEdit, onDuplicate, onView, onDelete, onSetStat
   )
 }
 
+function OnboardingChecklist({ campaigns, entries, navigate }) {
+  const hasCampaign  = campaigns.length > 0
+  const hasActive    = campaigns.some((c) => c.status === 'active')
+  const hasEntries   = entries.filter((e) => !e.suspicious).length > 0
+  const hasWinner    = campaigns.some((c) => c.status === 'completed' || c.status === 'ready-to-award')
+
+  const steps = [
+    { done: hasCampaign,  icon: Gift,         label: 'Create your first giveaway',        sub: 'Set prize, dates, and entry methods',   action: () => navigate('/campaigns/new'),      cta: 'Create Giveaway' },
+    { done: hasActive,    icon: Rocket,        label: 'Launch & share your giveaway',       sub: 'Activate it and share the link or QR',  action: () => navigate('/embed'),              cta: 'Get Share Link' },
+    { done: hasEntries,   icon: Users,         label: 'Watch entries come in',              sub: 'Monitor participants in real-time',      action: () => navigate('/participants'),       cta: 'View Entries' },
+    { done: hasWinner,    icon: Trophy,        label: 'Pick a winner & announce',           sub: 'Random draw with fraud protection',      action: () => navigate('/winner'),             cta: 'Pick Winner' },
+  ]
+
+  const completedCount = steps.filter((s) => s.done).length
+  if (completedCount === steps.length) return null // all done — hide
+
+  return (
+    <div className="bg-dark-800 border border-dark-500 rounded-xl p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-sm font-bold text-white flex items-center gap-2"><Rocket size={14} className="text-brand-green" /> Getting Started</h2>
+          <p className="text-xs text-dark-400 mt-0.5">{completedCount} of {steps.length} steps complete</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          {steps.map((s, i) => (
+            <div key={i} className={`h-1.5 w-8 rounded-full transition-colors ${s.done ? 'bg-brand-green' : 'bg-dark-600'}`} />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-2">
+        {steps.map((step, i) => {
+          const Icon = step.icon
+          const isNext = !step.done && steps.slice(0, i).every((s) => s.done)
+          return (
+            <div key={i} className={`flex items-center gap-3 p-3 rounded-xl transition-all ${isNext ? 'bg-brand-green/10 border border-brand-green/30' : 'border border-transparent'}`}>
+              <div className={`shrink-0 ${step.done ? 'text-brand-green' : isNext ? 'text-brand-green/60' : 'text-dark-600'}`}>
+                {step.done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className={`text-sm font-medium ${step.done ? 'text-dark-400 line-through' : 'text-white'}`}>{step.label}</p>
+                {!step.done && <p className="text-xs text-dark-500 mt-0.5">{step.sub}</p>}
+              </div>
+              {isNext && (
+                <button
+                  onClick={step.action}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-brand-green text-dark-900 font-semibold text-xs rounded-lg hover:bg-brand-green/80 transition-colors"
+                >
+                  {step.cta} <ChevronRight size={12} />
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const navigate = useNavigate()
   const {
@@ -123,6 +182,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5 max-w-6xl">
+
+      {/* Onboarding checklist — shown until all 4 steps complete */}
+      <OnboardingChecklist campaigns={campaigns} entries={entries} navigate={navigate} />
 
       {/* Bot alert banner */}
       {botAlerts.length > 0 && (
@@ -197,14 +259,44 @@ export default function Dashboard() {
 
         {/* Rows */}
         {filtered.length === 0 ? (
-          <div className="py-16 text-center px-4">
-            <Gift size={40} className="text-dark-600 mx-auto mb-3" />
-            <p className="text-sm font-medium text-white mb-1">No giveaways yet</p>
-            <p className="text-xs text-dark-400 mb-5">Create your first campaign to get started</p>
-            <s-button variant="primary" icon="plus" onClick={() => navigate('/campaigns/new')}>
-              New Giveaway
-            </s-button>
-          </div>
+          campaigns.length === 0 ? (
+            // True empty — no campaigns at all
+            <div className="py-12 px-6">
+              <div className="text-center mb-8">
+                <div className="w-14 h-14 rounded-2xl bg-brand-green/10 flex items-center justify-center mx-auto mb-4">
+                  <Gift size={24} className="text-brand-green" />
+                </div>
+                <p className="text-base font-bold text-white mb-1">Create your first giveaway</p>
+                <p className="text-xs text-dark-400 max-w-xs mx-auto">Launch in minutes — set a prize, pick entry methods, and share the link.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto mb-6">
+                {[
+                  { icon: Zap,    title: 'Quick Launch',   desc: 'Prize + dates + go live in 2 min',    action: () => navigate('/campaigns/new') },
+                  { icon: QrCode, title: 'Share via QR',   desc: 'Print & place anywhere for entries',  action: () => navigate('/embed') },
+                  { icon: Mail,   title: 'Email List',     desc: 'Connect Mailchimp or Klaviyo',        action: () => navigate('/settings?tab=Integrations') },
+                ].map(({ icon: Icon, title, desc, action }) => (
+                  <button key={title} onClick={action}
+                    className="flex flex-col items-start gap-2 p-4 bg-dark-700 border border-dark-500 rounded-xl hover:border-brand-green/50 hover:bg-dark-700/80 transition-all text-left group">
+                    <Icon size={16} className="text-brand-green" />
+                    <p className="text-sm font-semibold text-white group-hover:text-brand-green transition-colors">{title}</p>
+                    <p className="text-xs text-dark-400">{desc}</p>
+                  </button>
+                ))}
+              </div>
+              <div className="text-center">
+                <s-button variant="primary" icon="plus" onClick={() => navigate('/campaigns/new')}>
+                  Create Your First Giveaway
+                </s-button>
+              </div>
+            </div>
+          ) : (
+            // Has campaigns but search returned nothing
+            <div className="py-12 text-center px-4">
+              <Search size={28} className="text-dark-600 mx-auto mb-3" />
+              <p className="text-sm font-medium text-white mb-1">No results for "{search}"</p>
+              <p className="text-xs text-dark-400">Try a different title or prize name</p>
+            </div>
+          )
         ) : (
           <div className="divide-y divide-dark-700">
             {filtered.map((camp) => {
