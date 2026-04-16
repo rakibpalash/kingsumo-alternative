@@ -82,10 +82,24 @@ function AccountTab() {
   const [profile, setProfile] = useState({ name: 'John Doe', email: 'john@example.com', timezone: TIMEZONES[9], emailUpdates: true })
   const [defaults, setDefaults] = useState({ currency: CURRENCIES[0], language: LANGUAGES[0], offeredByName: '', offeredByUrl: '' })
   const [pw, setPw] = useState({ current: '', new: '', confirm: '' })
+  const [pwError, setPwError] = useState('')
+  const [pwSaved, setPwSaved] = useState(false)
   const [showPw, setShowPw] = useState({ current: false, new: false, confirm: false })
   const [showDelete, setShowDelete] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
 
   const save = () => { setSaved(true); setTimeout(() => setSaved(false), 2000) }
+
+  const handleUpdatePassword = () => {
+    if (!pw.current) { setPwError('Enter your current password'); return }
+    if (pw.new.length < 8) { setPwError('New password must be at least 8 characters'); return }
+    if (pw.new !== pw.confirm) { setPwError('New passwords do not match'); return }
+    setPwError('')
+    // In production this would call supabase.auth.updateUser({ password: pw.new })
+    setPwSaved(true)
+    setPw({ current: '', new: '', confirm: '' })
+    setTimeout(() => setPwSaved(false), 3000)
+  }
 
   return (
     <div className="space-y-5">
@@ -168,7 +182,9 @@ function AccountTab() {
               {key === 'new' && <p className="text-xs text-dark-500 mt-1">Must be 8-30 characters.</p>}
             </div>
           ))}
-          <button className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
+          {pwError && <p className="text-xs text-red-400">{pwError}</p>}
+          {pwSaved && <p className="text-xs text-brand-green flex items-center gap-1"><Check size={12} /> Password updated successfully</p>}
+          <button onClick={handleUpdatePassword} className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
             <Key size={13} /> Update Password
           </button>
         </div>
@@ -187,10 +203,20 @@ function AccountTab() {
           </button>
         ) : (
           <div className="space-y-3">
-            <p className="text-xs text-red-400">A notification email will be sent to your account email address. Follow the link in the email to confirm deletion.</p>
+            <p className="text-xs text-red-400">Type <strong>DELETE</strong> below to confirm. This will permanently erase all your campaigns, entries, and data.</p>
+            <input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className={inputCls + ' max-w-xs border-red-900/60'}
+            />
             <div className="flex gap-3">
-              <button className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg text-sm transition-colors">Confirm Delete</button>
-              <button onClick={() => setShowDelete(false)} className="px-4 py-2 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-sm transition-colors">Cancel</button>
+              <button
+                disabled={deleteConfirmText !== 'DELETE'}
+                onClick={() => { /* supabase.auth.signOut() + delete account */ alert('Account deletion would be processed here.') }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold rounded-lg text-sm transition-colors"
+              >Confirm Delete</button>
+              <button onClick={() => { setShowDelete(false); setDeleteConfirmText('') }} className="px-4 py-2 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-sm transition-colors">Cancel</button>
             </div>
           </div>
         )}
@@ -747,14 +773,42 @@ function IntegrationsTab() {
 
 /* ─── Tab: API ─────────────────────────────────────────────── */
 function ApiTab() {
-  const [apiKey] = useState('gsh_live_a8f3k2j9d1m7n4p6q0r5s8t2u3v1w9x')
+  const [apiKey, setApiKey] = useState('gsh_live_a8f3k2j9d1m7n4p6q0r5s8t2u3v1w9x')
   const [copied, setCopied] = useState(false)
   const [showKey, setShowKey] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+  const [tokens, setTokens] = useState([
+    { id: 1, name: 'My Integration App', scopes: 'read:entries write:campaigns', created: '2026-03-01' },
+  ])
+  const [newTokenName, setNewTokenName] = useState('')
+  const [showNewToken, setShowNewToken] = useState(false)
 
   const copyKey = () => {
     navigator.clipboard.writeText(apiKey)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleRegenerate = () => {
+    if (!window.confirm('Regenerate API key? The current key will stop working immediately.')) return
+    setRegenerating(true)
+    setTimeout(() => {
+      const newKey = 'gsh_live_' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
+      setApiKey(newKey)
+      setRegenerating(false)
+    }, 800)
+  }
+
+  const handleCreateToken = () => {
+    if (!newTokenName.trim()) return
+    setTokens((t) => [...t, { id: Date.now(), name: newTokenName.trim(), scopes: 'read:entries', created: new Date().toISOString().split('T')[0] }])
+    setNewTokenName('')
+    setShowNewToken(false)
+  }
+
+  const revokeToken = (id) => {
+    if (!window.confirm('Revoke this token? It will stop working immediately.')) return
+    setTokens((t) => t.filter((x) => x.id !== id))
   }
 
   return (
@@ -778,8 +832,8 @@ function ApiTab() {
                 </button>
               </div>
             </div>
-            <button className="flex items-center gap-1.5 px-3 py-2 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-xs transition-colors">
-              <RefreshCw size={12} /> Regenerate
+            <button onClick={handleRegenerate} disabled={regenerating} className="flex items-center gap-1.5 px-3 py-2 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-xs transition-colors disabled:opacity-60">
+              <RefreshCw size={12} className={regenerating ? 'animate-spin' : ''} /> Regenerate
             </button>
           </div>
           <p className="text-xs text-red-400/70">Never share your API key. Regenerating it will invalidate the current key.</p>
@@ -789,23 +843,38 @@ function ApiTab() {
       {/* OAuth & Access Tokens */}
       <SectionCard title="OAuth & Access Tokens" description="Manage OAuth clients and personal access tokens for API integrations.">
         <div className="space-y-3">
-          <div className="border border-dark-600 rounded-xl divide-y divide-dark-600">
-            {[
-              { name: 'My Integration App', scopes: 'read:entries write:campaigns', created: '2026-03-01' },
-            ].map((token) => (
-              <div key={token.name} className="flex items-center gap-3 px-4 py-3">
-                <Key size={14} className="text-brand-green shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">{token.name}</p>
-                  <p className="text-xs text-dark-400">Scopes: {token.scopes} · Created {token.created}</p>
+          {tokens.length > 0 && (
+            <div className="border border-dark-600 rounded-xl divide-y divide-dark-600">
+              {tokens.map((token) => (
+                <div key={token.id} className="flex items-center gap-3 px-4 py-3">
+                  <Key size={14} className="text-brand-green shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white">{token.name}</p>
+                    <p className="text-xs text-dark-400">Scopes: {token.scopes} · Created {token.created}</p>
+                  </div>
+                  <button onClick={() => revokeToken(token.id)} className="text-xs text-red-400 hover:text-red-300 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Revoke</button>
                 </div>
-                <button className="text-xs text-red-400 hover:text-red-300 border border-red-900/50 px-3 py-1.5 rounded-lg transition-colors">Revoke</button>
-              </div>
-            ))}
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
-            <Plus size={13} /> Create New Token
-          </button>
+              ))}
+            </div>
+          )}
+          {showNewToken ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={newTokenName}
+                onChange={(e) => setNewTokenName(e.target.value)}
+                placeholder="Token name (e.g. My App)"
+                className={inputCls + ' max-w-xs'}
+                onKeyDown={(e) => e.key === 'Enter' && handleCreateToken()}
+                autoFocus
+              />
+              <button onClick={handleCreateToken} className="px-3 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">Create</button>
+              <button onClick={() => setShowNewToken(false)} className="px-3 py-2 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-sm transition-colors">Cancel</button>
+            </div>
+          ) : (
+            <button onClick={() => setShowNewToken(true)} className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
+              <Plus size={13} /> Create New Token
+            </button>
+          )}
         </div>
       </SectionCard>
 
