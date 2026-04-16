@@ -308,10 +308,48 @@ export default function CampaignBuilder() {
       description: form.description,
       startDate: form.startsAt?.split('T')[0],
       endDate: form.endsAt?.split('T')[0],
-      entryMethods: { email: true, instagram: form.sharing.instagram, share: true, visit: false, tiktok: false, purchase: false },
+      // Entry methods — email always on; others from sharing toggles
+      entryMethods: {
+        email:     true,
+        instagram: !!form.sharing.instagram,
+        tiktok:    !!form.sharing.instagram, // reuse social toggle
+        share:     !!form.sharing.twitter || !!form.sharing.facebook,
+        visit:     false,
+        purchase:  false,
+      },
       entryValues: { email: 1, instagram: 2, tiktok: 2, share: 3, visit: 1, purchase: 5 },
+      // Bonus entry actions (section 3)
+      entryActions:  form.entryActions,
+      // Integrations (section 4)
+      integrations:  form.integrations,
+      // Rules & terms (section 5)
+      rulesText:     form.rulesText,
+      termsUrl:      form.termsUrl,
+      eligibility:   form.eligibility,
+      // Custom entry fields (section 13)
+      customFields:  form.customFields,
+      // Fraud & security
       fraudDetection: { blockDuplicateIP: true, blockDuplicateEmail: true, recaptcha: form.recaptcha },
-      branding: { showPoweredBy: true, customColor: '#00d084', storeName: form.runnerName },
+      // Branding
+      branding: {
+        showPoweredBy: true,
+        customColor:   form.brandColor || '#00d084',
+        storeName:     form.runnerName,
+        logoUrl:       form.logoUrl || '',
+      },
+      // Geo & age
+      geoEnabled:      form.geoEnabled,
+      allowedCountries: form.allowedCountries,
+      ageVerification: form.ageVerification,
+      minimumAge:      form.minimumAge,
+      // Referral
+      referralEnabled:      form.referralEnabled,
+      referralBonusEntries: form.referralBonusEntries,
+      // Password protection
+      passwordProtected: form.passwordProtected,
+      password:          form.password,
+      // Marketing consent
+      marketingConsent: form.marketingConsent,
     })
     navigate('/dashboard')
   }
