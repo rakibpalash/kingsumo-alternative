@@ -356,7 +356,7 @@ const EMAIL_INTEGRATIONS = [
   {
     id: 'mailchimp',
     name: 'Mailchimp',
-    logo: '🐵',
+    logo: 'M',  logoColor: '#FFE01B',
     description: 'Sync new entrants to your Mailchimp audience automatically.',
     docsUrl: 'https://mailchimp.com/help/about-api-keys/',
     fields: [
@@ -368,7 +368,7 @@ const EMAIL_INTEGRATIONS = [
   {
     id: 'klaviyo',
     name: 'Klaviyo',
-    logo: '📊',
+    logo: 'K',  logoColor: '#000000',
     description: 'Sync entrants to Klaviyo lists and trigger flows.',
     docsUrl: 'https://help.klaviyo.com/hc/en-us/articles/115005062267',
     fields: [
@@ -380,7 +380,7 @@ const EMAIL_INTEGRATIONS = [
   {
     id: 'convertkit',
     name: 'ConvertKit',
-    logo: '✉️',
+    logo: 'C',  logoColor: '#FB6970',
     description: 'Add entrants to ConvertKit forms and sequences.',
     docsUrl: 'https://developers.convertkit.com/',
     fields: [
@@ -393,7 +393,7 @@ const EMAIL_INTEGRATIONS = [
   {
     id: 'activecamp',
     name: 'ActiveCampaign',
-    logo: '🎯',
+    logo: 'A',  logoColor: '#356AE6',
     description: 'Sync contacts and trigger automation workflows.',
     docsUrl: 'https://help.activecampaign.com/hc/en-us/articles/207317590',
     fields: [
@@ -406,7 +406,7 @@ const EMAIL_INTEGRATIONS = [
   {
     id: 'sendfox',
     name: 'SendFox',
-    logo: '📧',
+    logo: 'S',  logoColor: '#FF6B35',
     description: 'Add entrants to your SendFox lists.',
     docsUrl: 'https://sendfox.com/docs',
     fields: [
@@ -418,7 +418,7 @@ const EMAIL_INTEGRATIONS = [
   {
     id: 'zapier',
     name: 'Zapier',
-    logo: '⚡',
+    logo: 'Z',  logoColor: '#FF4A00',
     description: 'Trigger any Zapier automation when a contestant enters.',
     docsUrl: 'https://zapier.com/apps/webhook/integrations',
     fields: [
@@ -486,7 +486,7 @@ function IntegrationCard({ svc, conn, onConnect, onDisconnect }) {
     <div className={`border rounded-xl transition-all ${isConnected ? 'border-brand-green/30 bg-brand-green/5' : expanded ? 'border-dark-400' : 'border-dark-600'}`}>
       {/* Row */}
       <div className="flex items-center gap-3 px-4 py-3.5">
-        <span className="text-2xl shrink-0">{svc.logo}</span>
+        <span className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-sm font-black text-white" style={{ background: svc.logoColor || '#374151' }}>{svc.logo}</span>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-semibold text-white">{svc.name}</p>

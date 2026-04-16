@@ -72,14 +72,14 @@ export default function Leaderboard() {
             {sorted.map((entry, i) => {
               const refLink = `${BASE_URL}?ref=${entry.referralCode}`
               const isCopied = copied === entry.id
-              const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null
+              const medal = i === 0 ? { label: '1st', color: 'text-amber-400 bg-amber-900/30' } : i === 1 ? { label: '2nd', color: 'text-slate-300 bg-slate-700/40' } : i === 2 ? { label: '3rd', color: 'text-orange-400 bg-orange-900/30' } : null
 
               return (
                 <div key={entry.id} className={`px-6 py-4 flex items-center gap-4 ${i === 0 ? 'bg-amber-900/10' : 'hover:bg-dark-700/30'} transition-colors`}>
                   {/* Rank */}
                   <div className="w-8 shrink-0 text-center">
                     {medal ? (
-                      <span className="text-xl">{medal}</span>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${medal.color}`}>{medal.label}</span>
                     ) : (
                       <span className="text-sm text-dark-500 font-mono">#{i + 1}</span>
                     )}

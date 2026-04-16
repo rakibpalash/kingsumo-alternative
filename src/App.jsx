@@ -22,6 +22,7 @@ import WinnerAnnouncement from './pages/WinnerAnnouncement'
 import EmailTemplateEditor from './pages/EmailTemplateEditor'
 import EntryPage from './pages/EntryPage'
 import ProofPage from './pages/ProofPage'
+import ClaimPage from './pages/ClaimPage'
 
 function AppShell({ session }) {
   if (!session) return <AuthPage />
@@ -104,6 +105,7 @@ export default function App() {
         <Route path="/g/:id"               element={<PublicLanding />} />
         <Route path="/enter/:id"           element={<EntryPage />} />
         <Route path="/proof/:campaignId"   element={<ProofPage />} />
+        <Route path="/claim/:campaignId"   element={<ClaimPage />} />
 
         {/* ── Everything else goes through the auth gate ── */}
         <Route path="/*" element={<AppShell session={session} />} />

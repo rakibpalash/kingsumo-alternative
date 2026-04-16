@@ -44,7 +44,9 @@ export default function WinnerAnnouncement() {
 
       {/* Winner card */}
       <div className="bg-gradient-to-br from-amber-900/30 to-dark-800 border border-amber-700/40 rounded-2xl p-8 text-center">
-        <div className="text-5xl mb-3">🎉</div>
+        <div className="flex items-center justify-center mb-3">
+          <Trophy size={48} className="text-amber-400" />
+        </div>
         <p className="text-xs text-amber-400 font-semibold uppercase tracking-widest mb-1">Winner Announcement</p>
         <h2 className="text-3xl font-bold text-white mb-1">{winner.name}</h2>
         <p className="text-dark-400 text-sm mb-4">{winner.email}</p>

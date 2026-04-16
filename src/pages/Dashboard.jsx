@@ -319,7 +319,7 @@ export default function Dashboard() {
                           {isActive && <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse shrink-0" />}
                           <p className="text-sm font-semibold text-white truncate">{camp.title}</p>
                         </div>
-                        <p className="text-xs text-dark-400 truncate">🏆 {camp.prize}</p>
+                        <p className="text-xs text-dark-400 truncate flex items-center gap-1"><Trophy size={10} /> {camp.prize}</p>
                         <div className="flex items-center gap-3 mt-2 flex-wrap">
                           <StatusBadge status={camp.status} />
                           <span className="text-xs text-dark-500 flex items-center gap-1"><Users size={11} /> {contestantCount}</span>
@@ -355,7 +355,7 @@ export default function Dashboard() {
                       <p className="text-sm font-semibold text-white truncate hover:text-brand-green transition-colors">{camp.title}</p>
                     </div>
                     <p className="text-xs text-dark-400 mt-0.5 truncate">
-                      🏆 {camp.prize}
+                      <Trophy size={11} className="inline mr-1 shrink-0" />{camp.prize}
                       {camp.prizeValue && <span className="ml-1 text-dark-500">· {camp.prizeValue}</span>}
                     </p>
                     <p className="text-[10px] text-dark-600 mt-0.5">{new Date(camp.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>

@@ -2,9 +2,10 @@ import { useState, useContext, createContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Mail, Upload, Lock, Plus, ChevronRight, ChevronUp, ChevronDown,
-  Shield, Zap, PlugZap, FileText, MapPin, UserCheck, Share2, FlaskConical, Sliders, Trash2, Sparkles, Loader2
+  Shield, Zap, PlugZap, FileText, MapPin, UserCheck, Share2, FlaskConical, Sliders, Trash2, Sparkles, Loader2, X, Gift
 } from 'lucide-react'
 import { generateTitle, generateDescription, generateRules } from '../lib/groq'
+import { fetchShopifyProducts } from '../lib/shopify'
 
 import { useStore } from '../store/useStore'
 
@@ -101,11 +102,11 @@ const TIMEZONES = [
 const SHARING_PLATFORMS = [
   { key: 'twitter',   label: 'X',  bg: 'bg-black/80',        text: 'text-white' },
   { key: 'facebook',  label: 'f',  bg: 'bg-blue-600',        text: 'text-white' },
-  { key: 'instagram', label: '📷', bg: 'bg-pink-500',         text: 'text-white' },
+  { key: 'instagram', label: 'Ig', bg: 'bg-pink-500',         text: 'text-white' },
   { key: 'messenger', label: 'm',  bg: 'bg-blue-400',        text: 'text-white' },
   { key: 'linkedin',  label: 'in', bg: 'bg-blue-700',        text: 'text-white' },
   { key: 'pinterest', label: 'P',  bg: 'bg-red-600',         text: 'text-white' },
-  { key: 'email',     label: '✉',  bg: 'bg-dark-600',        text: 'text-dark-300' },
+  { key: 'email',     label: '@',  bg: 'bg-dark-600',        text: 'text-dark-300' },
 ]
 
 const ENTRY_ACTION_GROUPS = [
@@ -219,6 +220,7 @@ export default function CampaignBuilder() {
     prizeName: '',
     prizeValue: '',
     prizeImage: null,
+    prizeImageUrl: '',
     contestantsProvide: { email: true, name: false, phone: false },
     // Section 2 – sharing
     sharing: { twitter: true, facebook: true, instagram: true, messenger: true, linkedin: true, pinterest: true, email: true },
@@ -260,6 +262,8 @@ export default function CampaignBuilder() {
   const [showIntegrationPicker, setShowIntegrationPicker] = useState(false)
   const [aiLoading, setAiLoading] = useState({ title: false, description: false, rules: false })
   const [aiError, setAiError] = useState('')
+  const [shopify, setShopify] = useState({ domain: '', token: '', products: [], loading: false, error: '', connected: false })
+  const [showProductPicker, setShowProductPicker] = useState(false)
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -309,6 +313,28 @@ export default function CampaignBuilder() {
     } finally {
       setAiLoading((s) => ({ ...s, rules: false }))
     }
+  }
+
+  const handleShopifyConnect = async () => {
+    if (!shopify.domain || !shopify.token) {
+      setShopify((s) => ({ ...s, error: 'Enter your store domain and token first.' }))
+      return
+    }
+    setShopify((s) => ({ ...s, loading: true, error: '' }))
+    try {
+      const products = await fetchShopifyProducts(shopify.domain, shopify.token)
+      setShopify((s) => ({ ...s, products, connected: true, loading: false }))
+      setShowProductPicker(true)
+    } catch (e) {
+      setShopify((s) => ({ ...s, error: e.message, loading: false }))
+    }
+  }
+
+  const handleSelectProduct = (product) => {
+    set('prizeName', product.title)
+    set('prizeValue', product.price)
+    set('prizeImageUrl', product.image || '')
+    setShowProductPicker(false)
   }
 
   const validate = () => {
@@ -550,6 +576,81 @@ export default function CampaignBuilder() {
             </div>
           </div>
 
+          {/* Shopify Product Picker */}
+          <div className="border border-dark-600 rounded-xl p-4 bg-dark-700/30">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-white flex items-center gap-2">
+                <span className="w-4 h-4 rounded bg-[#96bf48] flex items-center justify-center text-[10px] font-black text-white">S</span>
+                Import Prize from Shopify
+              </p>
+              {shopify.connected && (
+                <span className="text-[10px] text-brand-green border border-brand-green/30 bg-brand-green/10 px-2 py-0.5 rounded-full">Connected</span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <input
+                type="text"
+                value={shopify.domain}
+                onChange={(e) => setShopify((s) => ({ ...s, domain: e.target.value }))}
+                placeholder="mystore.myshopify.com"
+                className="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-white placeholder-dark-400 focus:outline-none focus:border-brand-green"
+              />
+              <input
+                type="password"
+                value={shopify.token}
+                onChange={(e) => setShopify((s) => ({ ...s, token: e.target.value }))}
+                placeholder="Storefront Access Token"
+                className="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-white placeholder-dark-400 focus:outline-none focus:border-brand-green"
+              />
+            </div>
+            {shopify.error && <p className="text-[10px] text-red-400 mb-2">{shopify.error}</p>}
+            <button
+              type="button"
+              onClick={shopify.connected ? () => setShowProductPicker(true) : handleShopifyConnect}
+              disabled={shopify.loading}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 bg-[#96bf48] text-white rounded-lg hover:bg-[#7aab2e] transition-colors disabled:opacity-50 font-semibold"
+            >
+              {shopify.loading ? <Loader2 size={11} className="animate-spin" /> : null}
+              {shopify.loading ? 'Connecting…' : shopify.connected ? 'Browse Products' : 'Connect & Browse Products'}
+            </button>
+          </div>
+
+          {/* Product Picker Modal */}
+          {showProductPicker && shopify.products.length > 0 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+              <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-dark-600">
+                  <p className="text-sm font-bold text-white">Select a Product</p>
+                  <button type="button" onClick={() => setShowProductPicker(false)} className="text-dark-400 hover:text-white transition-colors">
+                    <X size={16} />
+                  </button>
+                </div>
+                <div className="overflow-y-auto p-4 grid grid-cols-2 gap-3">
+                  {shopify.products.map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => handleSelectProduct(p)}
+                      className="text-left border border-dark-600 hover:border-brand-green rounded-xl overflow-hidden transition-colors group"
+                    >
+                      {p.image ? (
+                        <img src={p.image} alt={p.title} className="w-full h-28 object-cover" />
+                      ) : (
+                        <div className="w-full h-28 bg-dark-700 flex items-center justify-center">
+                          <Gift size={24} className="text-dark-500" />
+                        </div>
+                      )}
+                      <div className="p-2.5">
+                        <p className="text-xs font-semibold text-white group-hover:text-brand-green transition-colors line-clamp-2">{p.title}</p>
+                        <p className="text-xs text-brand-green mt-0.5">{p.currency} {p.price}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* What Are You Giving Away? */}
           <div>
             <p className="text-xs font-semibold text-white mb-2">What Are You Giving Away?</p>
@@ -581,6 +682,15 @@ export default function CampaignBuilder() {
               <span className="text-xs text-dark-400">Add Cover Image</span>
               <input type="file" accept="image/*" className="hidden" onChange={(e) => set('prizeImage', e.target.files?.[0] || null)} />
             </label>
+            {form.prizeImageUrl && (
+              <div className="mt-2 flex items-center gap-2">
+                <img src={form.prizeImageUrl} alt="Prize" className="w-16 h-16 rounded-lg object-cover border border-dark-500" />
+                <div>
+                  <p className="text-xs text-brand-green">Product image imported from Shopify</p>
+                  <button type="button" onClick={() => set('prizeImageUrl', '')} className="text-[10px] text-dark-400 hover:text-white transition-colors mt-0.5">Remove</button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Contestants Must Provide */}

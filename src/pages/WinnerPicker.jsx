@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Trophy, RefreshCw, Check, ExternalLink, Mail, Shield, Zap, RotateCcw } from 'lucide-react'
+import { Trophy, RefreshCw, Check, ExternalLink, Mail, Shield, Zap, RotateCcw, Copy, X, Link } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
 const SEGMENT_COLORS = [
@@ -154,7 +154,7 @@ function SpinWheel({ entries, onWinner }) {
         </button>
       ) : (
         <div className="text-center space-y-2">
-          <p className="text-brand-green font-bold text-xl">🎉 {localWinner.name}!</p>
+          <p className="text-brand-green font-bold text-xl flex items-center justify-center gap-2"><Trophy size={18} /> {localWinner.name}!</p>
           <p className="text-xs text-dark-400">{localWinner.email}</p>
           <button
             onClick={reset}
@@ -175,9 +175,11 @@ function SpinWheel({ entries, onWinner }) {
 /* ── Main Page ──────────────────────────────────────────────── */
 export default function WinnerPicker() {
   const { entries, activeCampaign, winner, pickWinner, clearWinner } = useStore()
-  const [mode, setMode]       = useState('wheel') // 'quick' | 'wheel'
+  const [mode, setMode]         = useState('wheel') // 'quick' | 'wheel'
   const [spinning, setSpinning] = useState(false)
   const [notified, setNotified] = useState(false)
+  const [showEmailModal, setShowEmailModal] = useState(false)
+  const [emailCopied, setEmailCopied] = useState(false)
 
   const validEntries = entries.filter((e) => !e.suspicious)
   const pool = validEntries.flatMap((e) => Array(e.entries).fill(e))
@@ -214,8 +216,8 @@ export default function WinnerPicker() {
       {/* Mode toggle */}
       <div className="flex items-center gap-1 bg-dark-800 border border-dark-500 rounded-xl p-1 w-fit">
         {[
-          { id: 'wheel', label: '🎡 Spin Wheel' },
-          { id: 'quick', label: '⚡ Quick Pick' },
+          { id: 'wheel', label: 'Spin Wheel' },
+          { id: 'quick', label: 'Quick Pick' },
         ].map(({ id, label }) => (
           <button
             key={id}
@@ -280,7 +282,7 @@ export default function WinnerPicker() {
           <div className="w-20 h-20 rounded-full bg-brand-green/10 border-2 border-brand-green flex items-center justify-center mx-auto mb-5">
             <Trophy size={32} className="text-brand-green" />
           </div>
-          <p className="text-xs font-semibold text-brand-green uppercase tracking-widest mb-2">🎉 Winner Selected!</p>
+          <p className="text-xs font-semibold text-brand-green uppercase tracking-widest mb-2 flex items-center justify-center gap-1.5"><Trophy size={12} /> Winner Selected!</p>
           <h2 className="text-2xl font-bold text-white mb-1">{winner.name}</h2>
           <p className="text-sm text-dark-400 mb-3">{winner.email}</p>
           <div className="flex items-center justify-center gap-2 flex-wrap mb-6">
@@ -310,16 +312,30 @@ export default function WinnerPicker() {
           </div>
 
           <div className="flex items-center justify-center gap-3 flex-wrap">
-            {!notified ? (
-              <button onClick={() => setNotified(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
-                <Mail size={14} /> Notify Winner by Email
-              </button>
-            ) : (
-              <div className="flex items-center gap-2 px-5 py-2.5 bg-brand-green/10 text-brand-green border border-brand-green/30 rounded-lg text-sm">
-                <Check size={14} /> Email sent to {winner.email}
+            <div className="w-full max-w-sm mx-auto space-y-3 mb-2">
+              {/* Claim link */}
+              <div className="bg-dark-700 rounded-xl border border-dark-600 p-3">
+                <p className="text-[10px] text-dark-400 mb-1.5">Winner Claim Link — send this to {winner.name}</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs text-brand-green flex-1 truncate">{`${window.location.origin}/claim/${activeCampaign?.id}`}</code>
+                  <button
+                    type="button"
+                    onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/claim/${activeCampaign?.id}`); setNotified(true); setTimeout(() => setNotified(false), 2000) }}
+                    className="shrink-0 text-dark-400 hover:text-white transition-colors"
+                  >
+                    {notified ? <Check size={13} className="text-brand-green" /> : <Copy size={13} />}
+                  </button>
+                </div>
               </div>
-            )}
+              {/* Email winner */}
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(true)}
+                className="flex items-center justify-center gap-2 w-full px-5 py-2.5 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors"
+              >
+                <Mail size={14} /> Send Winner Notification
+              </button>
+            </div>
             <button onClick={() => { clearWinner(); setNotified(false) }}
               className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-sm transition-colors">
               <RefreshCw size={14} /> Pick Again
@@ -327,6 +343,64 @@ export default function WinnerPicker() {
           </div>
         </div>
       )}
+
+      {/* ── Email Notification Modal ── */}
+      {showEmailModal && winner && (() => {
+        const claimLink = `${window.location.origin}/claim/${activeCampaign?.id}`
+        const subject = `Congratulations! You won ${activeCampaign?.prize || 'our giveaway'}!`
+        const body = `Hi ${winner.name},\n\nCongratulations! You've been selected as the winner of our "${activeCampaign?.title || 'giveaway'}" giveaway!\n\nPrize: ${activeCampaign?.prize || ''}${activeCampaign?.prizeValue ? ` (valued at $${activeCampaign.prizeValue})` : ''}\n\nPlease visit the link below to claim your prize and submit your shipping address:\n${claimLink}\n\nThis link expires in 7 days. If you have any questions, reply to this email.\n\nCongratulations again!\n`
+        const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(winner.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+        const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(winner.email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+        const copyEmail = () => {
+          navigator.clipboard.writeText(`To: ${winner.email}\nSubject: ${subject}\n\n${body}`)
+          setEmailCopied(true); setTimeout(() => setEmailCopied(false), 2000)
+        }
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+            <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-lg">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-dark-600">
+                <p className="text-sm font-bold text-white flex items-center gap-2"><Mail size={14} className="text-brand-green" /> Notify Winner</p>
+                <button onClick={() => setShowEmailModal(false)} className="text-dark-400 hover:text-white transition-colors"><X size={16} /></button>
+              </div>
+              <div className="p-5 space-y-4">
+                {/* Recipient */}
+                <div className="bg-dark-700 rounded-xl p-3">
+                  <p className="text-[10px] text-dark-400 mb-0.5">To</p>
+                  <p className="text-sm font-semibold text-white">{winner.name} <span className="text-dark-400 font-normal">— {winner.email}</span></p>
+                </div>
+                {/* Subject */}
+                <div className="bg-dark-700 rounded-xl p-3">
+                  <p className="text-[10px] text-dark-400 mb-0.5">Subject</p>
+                  <p className="text-sm text-white">{subject}</p>
+                </div>
+                {/* Body preview */}
+                <div className="bg-dark-700 rounded-xl p-3">
+                  <p className="text-[10px] text-dark-400 mb-1">Message</p>
+                  <pre className="text-xs text-dark-300 whitespace-pre-wrap font-sans leading-relaxed max-h-40 overflow-y-auto">{body}</pre>
+                </div>
+                {/* Actions */}
+                <div className="space-y-2">
+                  <p className="text-[10px] text-dark-400 uppercase tracking-wider">Send via</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <a href={gmailUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg text-xs transition-colors">
+                      <Mail size={13} /> Open in Gmail
+                    </a>
+                    <a href={outlookUrl} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-xs transition-colors">
+                      <Mail size={13} /> Open in Outlook
+                    </a>
+                  </div>
+                  <button onClick={copyEmail}
+                    className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-dark-700 border border-dark-500 hover:border-dark-400 text-white rounded-lg text-xs transition-colors">
+                    {emailCopied ? <><Check size={13} className="text-brand-green" /> Copied!</> : <><Copy size={13} /> Copy Full Email to Clipboard</>}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Eligible list */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-5">
