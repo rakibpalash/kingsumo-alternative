@@ -117,7 +117,8 @@ export const useStore = create(
           const mapped = (campaigns || []).map(mapCampaignFromDB)
 
           if (mapped.length === 0) {
-            set({ campaigns: [], entries: [], activeCampaign: null, dbLoading: false })
+            // DB returned empty — keep any locally-persisted campaigns instead of wiping them
+            set({ dbLoading: false })
             return
           }
 
@@ -186,7 +187,11 @@ export const useStore = create(
             end_date:    newCamp.endDate || null,
             settings:    { ...data },
           })
-          if (error) console.error('createCampaign:', error)
+          if (error) {
+            console.error('createCampaign DB error:', error)
+            // Show in UI so it's not silently lost
+            alert(`Campaign saved locally but failed to sync to cloud: ${error.message}`)
+          }
         }
       },
 

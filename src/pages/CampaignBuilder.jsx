@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
-  Mail, Upload, Lock, Plus, ChevronRight, Shield, Zap, PlugZap, FileText,
-  MapPin, UserCheck, Share2, FlaskConical, Sliders, Trash2
+  Mail, Upload, Lock, Plus, ChevronRight, ChevronUp, ChevronDown,
+  Shield, Zap, PlugZap, FileText, MapPin, UserCheck, Share2, FlaskConical, Sliders, Trash2, Sparkles, Loader2
 } from 'lucide-react'
+import { generateTitle, generateDescription, generateRules } from '../lib/groq'
 
 // Minimal inline brand icons (no external dependency)
 const BrandIcon = ({ letter, color }) => (
@@ -48,6 +49,31 @@ const ENTRY_ACTION_GROUPS = [
     options: ['Daily Entries', 'Click a Link', 'Watch a YouTube Video', 'Phone Number', 'Answer a Question', 'Refer a Friend', 'Leave a Review'],
   },
 ]
+
+// Per-action field configuration
+const ENTRY_ACTION_CONFIG = {
+  'Facebook Like':         { urlLabel: 'Facebook Page URL',  urlPlaceholder: 'https://facebook.com', defaultText: 'Like us on Facebook!',               locked: false },
+  'Instagram Follow':      { urlLabel: 'Instagram Username', urlPlaceholder: '',                     defaultText: 'Follow me on Instagram!',             locked: false },
+  'X Follow':              { urlLabel: 'X Username',         urlPlaceholder: '',                     defaultText: 'Follow me on X!',                    locked: false },
+  'YouTube Subscribe':     { urlLabel: 'YouTube Channel URL',urlPlaceholder: 'http://youtube.com/', defaultText: 'Subscribe to my channel on YouTube', locked: false },
+  'Podcast Subscribe':     { urlLabel: 'Podcast URL',        urlPlaceholder: '',                     defaultText: 'Subscribe to my podcast!',           locked: false },
+  'Daily Entries':         { urlLabel: null,                 urlPlaceholder: '',                     defaultText: 'Click here every day for more entries', locked: false },
+  'Click a Link':          { urlLabel: 'Action URL',         urlPlaceholder: 'http://',              defaultText: 'Visit our site!',                    locked: false },
+  'Watch a YouTube Video': { urlLabel: 'YouTube Video URL',  urlPlaceholder: 'http://youtube.com/', defaultText: 'Watch my YouTube video!',            locked: false },
+  'Phone Number':          { urlLabel: null,                 urlPlaceholder: '',                     defaultText: 'Enter your phone number',            locked: false },
+  'Answer a Question':     { urlLabel: null,                 urlPlaceholder: '',                     defaultText: 'Answer a question',                  locked: false },
+  'Refer a Friend':        { urlLabel: null,                 urlPlaceholder: '',                     defaultText: 'Refer a friend',                     locked: false },
+  'Leave a Review':        { urlLabel: 'Review URL',         urlPlaceholder: '',                     defaultText: 'Leave a review',                     locked: false },
+}
+
+const DEFAULT_ENTRY_ACTIONS = Object.entries(ENTRY_ACTION_CONFIG).map(([type, cfg], i) => ({
+  id: i + 1,
+  type,
+  label: type,
+  actionText: cfg.defaultText,
+  url: '',
+  entries: 2,
+}))
 
 function SectionHeader({ number, icon: Icon, title }) {
   return (
@@ -138,6 +164,56 @@ export default function CampaignBuilder() {
   })
 
   const [errors, setErrors] = useState({})
+  const [aiLoading, setAiLoading] = useState({ title: false, description: false, rules: false })
+  const [aiError, setAiError] = useState('')
+
+  const handleGenerateTitle = async () => {
+    setAiLoading((s) => ({ ...s, title: true }))
+    setAiError('')
+    set('title', '')
+    try {
+      await generateTitle(
+        { prizeName: form.prizeName, prizeValue: form.prizeValue, runnerName: form.runnerName },
+        (chunk) => setForm((f) => ({ ...f, title: f.title + chunk }))
+      )
+    } catch (e) {
+      setAiError(e.message || 'AI generation failed')
+    } finally {
+      setAiLoading((s) => ({ ...s, title: false }))
+    }
+  }
+
+  const handleGenerateDescription = async () => {
+    setAiLoading((s) => ({ ...s, description: true }))
+    setAiError('')
+    set('description', '')
+    try {
+      await generateDescription(
+        { title: form.title, prizeName: form.prizeName, prizeValue: form.prizeValue, runnerName: form.runnerName, startsAt: form.startsAt, endsAt: form.endsAt },
+        (chunk) => setForm((f) => ({ ...f, description: f.description + chunk }))
+      )
+    } catch (e) {
+      setAiError(e.message || 'AI generation failed')
+    } finally {
+      setAiLoading((s) => ({ ...s, description: false }))
+    }
+  }
+
+  const handleGenerateRules = async () => {
+    setAiLoading((s) => ({ ...s, rules: true }))
+    setAiError('')
+    set('rulesText', '')
+    try {
+      await generateRules(
+        { prizeName: form.prizeName, runnerName: form.runnerName, runnerUrl: form.runnerUrl, endsAt: form.endsAt, minimumAge: form.minimumAge, ageVerification: form.ageVerification, geoEnabled: form.geoEnabled, allowedCountries: form.allowedCountries },
+        (chunk) => setForm((f) => ({ ...f, rulesText: f.rulesText + chunk }))
+      )
+    } catch (e) {
+      setAiError(e.message || 'AI generation failed')
+    } finally {
+      setAiLoading((s) => ({ ...s, rules: false }))
+    }
+  }
 
   const set = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
@@ -170,14 +246,43 @@ export default function CampaignBuilder() {
 
   const addEntryAction = (action) => {
     if (!action) return
-    setForm((f) => ({ ...f, entryActions: [...f.entryActions, { id: Date.now(), type: action, label: action }] }))
+    const cfg = ENTRY_ACTION_CONFIG[action] || { defaultText: action }
+    setForm((f) => ({
+      ...f,
+      entryActions: [
+        ...f.entryActions,
+        { id: Date.now(), type: action, label: action, actionText: cfg.defaultText, url: '', entries: 2 },
+      ],
+    }))
   }
 
   const removeEntryAction = (id) =>
     setForm((f) => ({ ...f, entryActions: f.entryActions.filter((a) => a.id !== id) }))
 
+  const updateEntryAction = (id, field, value) =>
+    setForm((f) => ({
+      ...f,
+      entryActions: f.entryActions.map((a) => (a.id === id ? { ...a, [field]: value } : a)),
+    }))
+
+  const moveEntryAction = (id, dir) =>
+    setForm((f) => {
+      const arr = [...f.entryActions]
+      const idx = arr.findIndex((a) => a.id === id)
+      const target = idx + dir
+      if (target < 0 || target >= arr.length) return f
+      ;[arr[idx], arr[target]] = [arr[target], arr[idx]]
+      return { ...f, entryActions: arr }
+    })
+
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
+
+      {aiError && (
+        <div className="bg-red-500/10 border border-red-500/40 text-red-400 text-sm rounded-lg px-4 py-3">
+          <strong>AI Error:</strong> {aiError}
+        </div>
+      )}
 
       {/* ── 1. Giveaway Information ── */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
@@ -189,11 +294,35 @@ export default function CampaignBuilder() {
         <div className="space-y-4">
           {/* Title */}
           <InputField label="Title" required error={errors.title}>
+            <div className="flex justify-end mb-1">
+              <button
+                type="button"
+                onClick={handleGenerateTitle}
+                disabled={aiLoading.title}
+                className="flex items-center gap-1.5 text-xs font-medium text-brand-green hover:text-brand-green/80 disabled:opacity-50 transition-colors"
+              >
+                {aiLoading.title
+                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                  : <><Sparkles size={13} /> Generate with AI</>}
+              </button>
+            </div>
             <input value={form.title} onChange={(e) => set('title', e.target.value)} className={inputCls} />
           </InputField>
 
           {/* Description with simple toolbar */}
           <InputField label="Description" required={false}>
+            <div className="flex justify-end mb-1">
+              <button
+                type="button"
+                onClick={handleGenerateDescription}
+                disabled={aiLoading.description}
+                className="flex items-center gap-1.5 text-xs font-medium text-brand-green hover:text-brand-green/80 disabled:opacity-50 transition-colors"
+              >
+                {aiLoading.description
+                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                  : <><Sparkles size={13} /> Generate with AI</>}
+              </button>
+            </div>
             <div className="border border-dark-500 rounded-lg overflow-hidden">
               <div className="flex items-center gap-1 px-2 py-1.5 border-b border-dark-500 bg-dark-700">
                 <select className="text-xs bg-transparent text-dark-400 focus:outline-none mr-1">
@@ -344,35 +473,82 @@ export default function CampaignBuilder() {
         <SectionHeader number="3" icon={Zap} title="Bonus Entries" />
         <p className="text-xs text-dark-400 mb-4">These are actions a contestant can take to get even more entries.</p>
 
-        {/* Added entry actions */}
-        {form.entryActions.length > 0 && (
-          <div className="space-y-2 mb-3">
-            {form.entryActions.map((action) => (
-              <div key={action.id} className="flex items-center justify-between bg-dark-700 border border-dark-500 rounded-lg px-3 py-2">
-                <span className="text-sm text-white">{action.label}</span>
-                <button type="button" onClick={() => removeEntryAction(action.id)} className="text-dark-400 hover:text-red-400 text-xs transition-colors">
-                  Remove
-                </button>
+        {/* Expanded entry action cards */}
+        <div className="space-y-3 mb-4">
+          {form.entryActions.map((action, idx) => {
+            const cfg = ENTRY_ACTION_CONFIG[action.type] || {}
+            const isFirst = idx === 0
+            const isLast = idx === form.entryActions.length - 1
+
+            return (
+              <div key={action.id} className="border border-dark-500 rounded-lg overflow-hidden">
+                {/* Card header */}
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-dark-500 bg-dark-700">
+                  <div className="flex flex-col mr-1">
+                    <button type="button" onClick={() => moveEntryAction(action.id, -1)} disabled={isFirst} className="text-dark-500 hover:text-white disabled:opacity-30 leading-none"><ChevronUp size={13} /></button>
+                    <button type="button" onClick={() => moveEntryAction(action.id, 1)} disabled={isLast} className="text-dark-500 hover:text-white disabled:opacity-30 leading-none"><ChevronDown size={13} /></button>
+                  </div>
+                  <span className="text-sm font-semibold text-white flex-1">{action.label}</span>
+                  <button type="button" onClick={() => removeEntryAction(action.id)} className="text-dark-400 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
+                </div>
+
+                {/* Card fields */}
+                <div className="p-4 bg-dark-800 space-y-3">
+                  <div className="grid grid-cols-2 gap-4">
+                    <InputField label="Action Text" required>
+                      <input
+                        type="text"
+                        value={action.actionText}
+                        onChange={(e) => updateEntryAction(action.id, 'actionText', e.target.value)}
+                        placeholder={cfg.defaultText || action.label}
+                        className={inputCls}
+                      />
+                    </InputField>
+                    {cfg.urlLabel && (
+                      <InputField label={cfg.urlLabel} required>
+                        <input
+                          type="text"
+                          value={action.url}
+                          onChange={(e) => updateEntryAction(action.id, 'url', e.target.value)}
+                          placeholder={cfg.urlPlaceholder || ''}
+                          className={inputCls}
+                        />
+                      </InputField>
+                    )}
+                  </div>
+
+                  <InputField label="Number of Entries" required>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="number"
+                        min="1"
+                        max="100"
+                        value={action.entries}
+                        onChange={(e) => updateEntryAction(action.id, 'entries', parseInt(e.target.value) || 1)}
+                        className={inputCls + ' max-w-[100px]'}
+                      />
+                      <span className="text-xs text-dark-400">How many entries this action is worth.</span>
+                    </div>
+                  </InputField>
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            )
+          })}
+        </div>
 
         {/* Add Entry Action */}
-        <div className="flex items-center gap-2">
-          <select
-            defaultValue=""
-            onChange={(e) => { addEntryAction(e.target.value); e.target.value = '' }}
-            className={inputCls + ' max-w-xs'}
-          >
-            <option value="" disabled>Add Entry Action</option>
-            {ENTRY_ACTION_GROUPS.map(({ label, options }) => (
-              <optgroup key={label} label={label}>
-                {options.map((a) => <option key={a} value={a}>{a}</option>)}
-              </optgroup>
-            ))}
-          </select>
-        </div>
+        <select
+          defaultValue=""
+          onChange={(e) => { addEntryAction(e.target.value); e.target.value = '' }}
+          className={inputCls + ' max-w-xs'}
+        >
+          <option value="" disabled>Add Entry Action</option>
+          {ENTRY_ACTION_GROUPS.map(({ label, options }) => (
+            <optgroup key={label} label={label}>
+              {options.map((a) => <option key={a} value={a}>{a}</option>)}
+            </optgroup>
+          ))}
+        </select>
       </div>
 
       {/* ── 4. Integrations ── */}
@@ -389,6 +565,18 @@ export default function CampaignBuilder() {
         <SectionHeader number="5" icon={FileText} title="Rules and Terms" />
         <div className="space-y-4">
           <InputField label="Giveaway Rules" required={false}>
+            <div className="flex justify-end mb-1">
+              <button
+                type="button"
+                onClick={handleGenerateRules}
+                disabled={aiLoading.rules}
+                className="flex items-center gap-1.5 text-xs font-medium text-brand-green hover:text-brand-green/80 disabled:opacity-50 transition-colors"
+              >
+                {aiLoading.rules
+                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
+                  : <><Sparkles size={13} /> Generate with AI</>}
+              </button>
+            </div>
             <textarea
               value={form.rulesText}
               onChange={(e) => set('rulesText', e.target.value)}
