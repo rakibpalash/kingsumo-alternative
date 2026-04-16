@@ -29,7 +29,8 @@ create table if not exists public.entries (
   referred_by   text,
   referrals     integer default 0,
   ip            text,
-  entered_at    timestamptz default now()
+  entered_at    timestamptz default now(),
+  constraint entries_campaign_email_unique unique (campaign_id, email)
 );
 
 -- Winners
@@ -86,33 +87,23 @@ create policy "own_winners" on public.winners
     )
   );
 
--- ─── Public Entry Page Policies ──────────────
--- Run these in Supabase SQL Editor to enable the public /enter/:id page
-
--- Anyone can read any campaign by ID (for public entry page)
+-- ─── Public Page Policies ────────────────────
+-- Anyone can read any campaign by ID (for /enter/:id and /g/:id pages)
 create policy "public_read_campaigns" on public.campaigns
   for select using (true);
 
--- Anyone can insert an entry for any campaign (entry page submission)
+-- Anyone can insert an entry (public entry page submission)
 create policy "public_insert_entries" on public.entries
   for insert with check (
-    exists (
-      select 1 from public.campaigns where id = entries.campaign_id
-    )
+    exists (select 1 from public.campaigns where id = entries.campaign_id)
   );
 
--- Anyone can read entry count for a campaign (shows participant count)
+-- Anyone can read non-suspicious entries (entry count display)
 create policy "public_read_entry_count" on public.entries
-  for select using (
-    exists (
-      select 1 from public.campaigns where id = entries.campaign_id
-    )
-  );
+  for select using (suspicious = false);
 
--- Anyone can read winners for proof page
+-- Anyone can read winners (for proof/winner announcement page)
 create policy "public_read_winners" on public.winners
   for select using (
-    exists (
-      select 1 from public.campaigns where id = winners.campaign_id
-    )
+    exists (select 1 from public.campaigns where id = winners.campaign_id)
   );

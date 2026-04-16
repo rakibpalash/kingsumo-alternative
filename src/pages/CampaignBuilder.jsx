@@ -167,6 +167,8 @@ export default function CampaignBuilder() {
   const [aiLoading, setAiLoading] = useState({ title: false, description: false, rules: false })
   const [aiError, setAiError] = useState('')
 
+  const set = (field, value) => setForm((f) => ({ ...f, [field]: value }))
+
   const handleGenerateTitle = async () => {
     setAiLoading((s) => ({ ...s, title: true }))
     setAiError('')
@@ -214,8 +216,6 @@ export default function CampaignBuilder() {
       setAiLoading((s) => ({ ...s, rules: false }))
     }
   }
-
-  const set = (field, value) => setForm((f) => ({ ...f, [field]: value }))
 
   const validate = () => {
     const e = {}
@@ -293,103 +293,111 @@ export default function CampaignBuilder() {
 
         <div className="space-y-4">
           {/* Title */}
-          <InputField label="Title" required error={errors.title}>
-            <div className="flex justify-end mb-1">
-              <button
-                type="button"
+          <div>
+            <s-text-field
+              label="Title"
+              required
+              value={form.title}
+              error={errors.title}
+              onInput={(e) => set('title', e.target.value)}
+            >
+              <s-button
+                slot="accessory"
+                variant="tertiary"
+                icon="sparkle"
+                loading={aiLoading.title || undefined}
                 onClick={handleGenerateTitle}
-                disabled={aiLoading.title}
-                className="flex items-center gap-1.5 text-xs font-medium text-brand-green hover:text-brand-green/80 disabled:opacity-50 transition-colors"
               >
-                {aiLoading.title
-                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
-                  : <><Sparkles size={13} /> Generate with AI</>}
-              </button>
-            </div>
-            <input value={form.title} onChange={(e) => set('title', e.target.value)} className={inputCls} />
-          </InputField>
+                {aiLoading.title ? 'Generating…' : 'Generate with AI'}
+              </s-button>
+            </s-text-field>
+          </div>
 
-          {/* Description with simple toolbar */}
-          <InputField label="Description" required={false}>
-            <div className="flex justify-end mb-1">
-              <button
-                type="button"
+          {/* Description */}
+          <div>
+            <s-text-field
+              label="Description"
+              value={form.description}
+              multiline="4"
+              placeholder="Describe your giveaway or click 'Generate with AI'…"
+              onInput={(e) => set('description', e.target.value)}
+            >
+              <s-button
+                slot="accessory"
+                variant="tertiary"
+                icon="sparkle"
+                loading={aiLoading.description || undefined}
                 onClick={handleGenerateDescription}
-                disabled={aiLoading.description}
-                className="flex items-center gap-1.5 text-xs font-medium text-brand-green hover:text-brand-green/80 disabled:opacity-50 transition-colors"
               >
-                {aiLoading.description
-                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
-                  : <><Sparkles size={13} /> Generate with AI</>}
-              </button>
-            </div>
-            <div className="border border-dark-500 rounded-lg overflow-hidden">
-              <div className="flex items-center gap-1 px-2 py-1.5 border-b border-dark-500 bg-dark-700">
-                <select className="text-xs bg-transparent text-dark-400 focus:outline-none mr-1">
-                  <option>Normal</option><option>Heading 1</option><option>Heading 2</option>
-                </select>
-                {['i','B','I','U','S'].map((t) => (
-                  <button key={t} type="button" className="w-6 h-6 text-xs text-dark-400 hover:text-white rounded hover:bg-dark-600 flex items-center justify-center font-medium transition-colors">
-                    {t}
-                  </button>
-                ))}
-                <div className="w-px h-4 bg-dark-500 mx-1" />
-                {['≡','#','⇤'].map((t) => (
-                  <button key={t} type="button" className="w-6 h-6 text-xs text-dark-400 hover:text-white rounded hover:bg-dark-600 flex items-center justify-center transition-colors">
-                    {t}
-                  </button>
-                ))}
-              </div>
-              <textarea
-                value={form.description}
-                onChange={(e) => set('description', e.target.value)}
-                rows={4}
-                className="w-full bg-dark-700 px-3 py-2 text-sm text-white placeholder-dark-400 focus:outline-none resize-none"
-              />
-            </div>
-          </InputField>
+                {aiLoading.description ? 'Generating…' : 'Generate with AI'}
+              </s-button>
+            </s-text-field>
+          </div>
 
           {/* Starts At / Ends At */}
           <div className="grid grid-cols-2 gap-4">
-            <InputField label="Starts At" required>
-              <input type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} className={inputCls} />
-            </InputField>
-            <InputField label="Ends At" required error={errors.endsAt}>
-              <input type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} className={inputCls} />
-            </InputField>
+            <s-text-field
+              label="Starts At"
+              required
+              type="datetime-local"
+              value={form.startsAt}
+              onInput={(e) => set('startsAt', e.target.value)}
+            />
+            <s-text-field
+              label="Ends At"
+              required
+              type="datetime-local"
+              value={form.endsAt}
+              error={errors.endsAt}
+              onInput={(e) => set('endsAt', e.target.value)}
+            />
           </div>
 
           {/* Awarded At / Number of Winners */}
           <div className="grid grid-cols-2 gap-4">
-            <InputField label="Awarded At" required>
-              <input type="datetime-local" value={form.awardedAt} onChange={(e) => set('awardedAt', e.target.value)} className={inputCls} />
-            </InputField>
-            <InputField label="Number of Winners" required>
-              <input
-                type="number" min="1" value={form.numberOfWinners}
-                onChange={(e) => set('numberOfWinners', parseInt(e.target.value) || 1)}
-                className={inputCls}
-              />
-            </InputField>
+            <s-text-field
+              label="Awarded At"
+              required
+              type="datetime-local"
+              value={form.awardedAt}
+              onInput={(e) => set('awardedAt', e.target.value)}
+            />
+            <s-text-field
+              label="Number of Winners"
+              required
+              type="number"
+              min="1"
+              value={form.numberOfWinners}
+              onInput={(e) => set('numberOfWinners', parseInt(e.target.value) || 1)}
+            />
           </div>
 
           {/* Timezone */}
-          <InputField label="Timezone">
-            <select value={form.timezone} onChange={(e) => set('timezone', e.target.value)} className={inputCls}>
-              {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
-            </select>
-          </InputField>
+          <s-select
+            label="Timezone"
+            value={form.timezone}
+            onChange={(e) => set('timezone', e.target.value)}
+          >
+            {TIMEZONES.map((tz) => <s-option key={tz} value={tz}>{tz}</s-option>)}
+          </s-select>
 
           {/* Who's Running This Giveaway? */}
           <div>
             <p className="text-xs font-semibold text-white mb-2">Who's Running This Giveaway?</p>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Name" required>
-                <input value={form.runnerName} onChange={(e) => set('runnerName', e.target.value)} className={inputCls} />
-              </InputField>
-              <InputField label="URL" required>
-                <input value={form.runnerUrl} onChange={(e) => set('runnerUrl', e.target.value)} placeholder="http://" className={inputCls} />
-              </InputField>
+              <s-text-field
+                label="Name"
+                required
+                value={form.runnerName}
+                onInput={(e) => set('runnerName', e.target.value)}
+              />
+              <s-text-field
+                label="URL"
+                required
+                value={form.runnerUrl}
+                placeholder="http://"
+                onInput={(e) => set('runnerUrl', e.target.value)}
+              />
             </div>
           </div>
 
@@ -397,15 +405,20 @@ export default function CampaignBuilder() {
           <div>
             <p className="text-xs font-semibold text-white mb-2">What Are You Giving Away?</p>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Prize Name" required error={errors.prizeName}>
-                <input value={form.prizeName} onChange={(e) => set('prizeName', e.target.value)} className={inputCls} />
-              </InputField>
-              <InputField label="Prize Value" required>
-                <div className="relative">
-                  <input value={form.prizeValue} onChange={(e) => set('prizeValue', e.target.value)} className={inputCls + ' pr-8'} />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-400 text-sm">$</span>
-                </div>
-              </InputField>
+              <s-text-field
+                label="Prize Name"
+                required
+                value={form.prizeName}
+                error={errors.prizeName}
+                onInput={(e) => set('prizeName', e.target.value)}
+              />
+              <s-text-field
+                label="Prize Value"
+                required
+                value={form.prizeValue}
+                prefix="$"
+                onInput={(e) => set('prizeValue', e.target.value)}
+              />
             </div>
           </div>
 
@@ -430,15 +443,12 @@ export default function CampaignBuilder() {
                 { key: 'name', label: 'Name' },
                 { key: 'phone', label: 'Phone Number' },
               ].map(({ key, label }) => (
-                <label key={key} className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={form.contestantsProvide[key]}
-                    onChange={() => setForm((f) => ({ ...f, contestantsProvide: { ...f.contestantsProvide, [key]: !f.contestantsProvide[key] } }))}
-                    className="w-4 h-4 accent-brand-green"
-                  />
-                  <span className="text-sm text-dark-400">{label}</span>
-                </label>
+                <s-checkbox
+                  key={key}
+                  label={label}
+                  checked={form.contestantsProvide[key] || undefined}
+                  onChange={() => setForm((f) => ({ ...f, contestantsProvide: { ...f.contestantsProvide, [key]: !f.contestantsProvide[key] } }))}
+                />
               ))}
             </div>
           </div>
@@ -537,73 +547,104 @@ export default function CampaignBuilder() {
         </div>
 
         {/* Add Entry Action */}
-        <select
-          defaultValue=""
-          onChange={(e) => { addEntryAction(e.target.value); e.target.value = '' }}
-          className={inputCls + ' max-w-xs'}
-        >
-          <option value="" disabled>Add Entry Action</option>
-          {ENTRY_ACTION_GROUPS.map(({ label, options }) => (
-            <optgroup key={label} label={label}>
-              {options.map((a) => <option key={a} value={a}>{a}</option>)}
-            </optgroup>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <s-select
+            label="Add Entry Action"
+            labelaccessibilityvisibility="hidden"
+            placeholder="Add Entry Action"
+            onChange={(e) => { addEntryAction(e.target.value); e.target.value = '' }}
+          >
+            {ENTRY_ACTION_GROUPS.map(({ label, options }) => (
+              <s-option-group key={label} label={label}>
+                {options.map((a) => <s-option key={a} value={a}>{a}</s-option>)}
+              </s-option-group>
+            ))}
+          </s-select>
+        </div>
       </div>
 
       {/* ── 4. Integrations ── */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="4" icon={PlugZap} title="Integrations" />
         <p className="text-xs text-dark-400 mb-4">Integrations allow you to send new contestant information to third party services.</p>
-        <button type="button" className="flex items-center gap-2 bg-brand-green text-dark-900 font-semibold text-sm px-4 py-2 rounded-lg hover:bg-brand-green/80 transition-colors">
-          <Plus size={14} /> Add an Integration
-        </button>
+        <s-button type="button" variant="primary" icon="plus">
+          Add an Integration
+        </s-button>
       </div>
 
       {/* ── 5. Rules and Terms ── */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="5" icon={FileText} title="Rules and Terms" />
         <div className="space-y-4">
-          <InputField label="Giveaway Rules" required={false}>
-            <div className="flex justify-end mb-1">
-              <button
-                type="button"
-                onClick={handleGenerateRules}
-                disabled={aiLoading.rules}
-                className="flex items-center gap-1.5 text-xs font-medium text-brand-green hover:text-brand-green/80 disabled:opacity-50 transition-colors"
-              >
-                {aiLoading.rules
-                  ? <><Loader2 size={13} className="animate-spin" /> Generating…</>
-                  : <><Sparkles size={13} /> Generate with AI</>}
-              </button>
+          {/* Quick Template Buttons */}
+          <div>
+            <p className="text-xs text-dark-400 mb-2">Quick Templates:</p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                {
+                  label: 'Standard Giveaway',
+                  text: `1. Open to residents of ${form.eligibility || '[Country]'} aged 18+.\n2. One entry per person.\n3. Winner will be selected randomly and notified by email within 48 hours.\n4. Prize is non-transferable and has no cash alternative.\n5. Giveaway ends ${form.endsAt?.split('T')[0] || '[End Date]'}.\n6. By entering, you agree to these rules and our Terms & Conditions.`,
+                },
+                {
+                  label: 'Social Media',
+                  text: `1. Follow our official account to enter.\n2. Open to residents of ${form.eligibility || '[Country]'} aged 18+.\n3. One entry per person per platform.\n4. Winner announced on ${form.awardedAt?.split('T')[0] || '[Award Date]'}.\n5. Prize: ${form.prizeName || '[Prize]'} (valued at ${form.prizeValue ? '$' + form.prizeValue : '[Value]'}).\n6. This promotion is not sponsored by any social media platform.`,
+                },
+                {
+                  label: 'Product Launch',
+                  text: `1. Purchase required to enter (or see alternate entry method).\n2. Prize: ${form.prizeName || '[Prize]'}.\n3. Open to ${form.eligibility || 'all eligible participants'} aged 18+.\n4. Entries accepted from ${form.startsAt?.split('T')[0] || '[Start Date]'} to ${form.endsAt?.split('T')[0] || '[End Date]'}.\n5. Winner selected randomly and contacted via email.\n6. Unclaimed prizes will be forfeited after 7 days.`,
+                },
+              ].map(({ label, text }) => (
+                <s-button key={label} type="button" variant="secondary" onClick={() => set('rulesText', text)}>
+                  {label}
+                </s-button>
+              ))}
+              {form.rulesText && (
+                <s-button type="button" variant="tertiary" tone="critical" onClick={() => set('rulesText', '')}>
+                  Clear
+                </s-button>
+              )}
             </div>
-            <textarea
-              value={form.rulesText}
-              onChange={(e) => set('rulesText', e.target.value)}
-              rows={5}
-              placeholder={`Example:\n1. Open to residents of [Country] aged 18+.\n2. One entry per person.\n3. Winner will be selected randomly and notified by email.\n4. Prize is non-transferable and has no cash alternative.\n5. Giveaway ends ${form.endsAt?.split('T')[0] || 'on the specified date'}.`}
-              className={inputCls + ' resize-none font-sans leading-relaxed'}
-            />
-          </InputField>
+          </div>
+
+          <s-text-field
+            label="Giveaway Rules"
+            value={form.rulesText}
+            multiline="7"
+            placeholder={`Example:\n1. Open to residents of [Country] aged 18+.\n2. One entry per person.\n3. Winner will be selected randomly and notified by email.\n4. Prize is non-transferable and has no cash alternative.\n5. Giveaway ends ${form.endsAt?.split('T')[0] || 'on the specified date'}.`}
+            onInput={(e) => set('rulesText', e.target.value)}
+          >
+            <s-button
+              slot="accessory"
+              variant="tertiary"
+              icon="sparkle"
+              loading={aiLoading.rules || undefined}
+              onClick={handleGenerateRules}
+            >
+              {aiLoading.rules ? 'Generating…' : 'Generate with AI'}
+            </s-button>
+          </s-text-field>
 
           <div className="grid grid-cols-2 gap-4">
-            <InputField label="Eligibility (e.g. US only, 18+)">
-              <input
-                value={form.eligibility}
-                onChange={(e) => set('eligibility', e.target.value)}
-                placeholder="e.g. US residents, 18 years or older"
-                className={inputCls}
-              />
-            </InputField>
-            <InputField label="Full Terms & Conditions URL">
-              <input
-                value={form.termsUrl}
-                onChange={(e) => set('termsUrl', e.target.value)}
-                placeholder="https://yoursite.com/terms"
-                className={inputCls}
-              />
-            </InputField>
+            <s-text-field
+              label="Eligibility (e.g. US only, 18+)"
+              value={form.eligibility}
+              placeholder="e.g. US residents, 18 years or older"
+              onInput={(e) => set('eligibility', e.target.value)}
+            />
+            <s-text-field
+              label="Full Terms & Conditions URL"
+              value={form.termsUrl}
+              placeholder="https://yoursite.com/terms"
+              onInput={(e) => set('termsUrl', e.target.value)}
+            />
           </div>
+
+          {/* Character count */}
+          {form.rulesText && (
+            <p className="text-xs text-dark-500 text-right">
+              {form.rulesText.length} characters · {form.rulesText.split('\n').filter(Boolean).length} rules
+            </p>
+          )}
 
           <p className="text-xs text-dark-500">
             Rules are displayed on your giveaway landing page. A link to your full T&amp;C appears beneath the entry form.
@@ -617,15 +658,11 @@ export default function CampaignBuilder() {
         <p className="text-xs text-dark-400 mb-4">
           Enabling <span className="text-brand-green cursor-pointer hover:underline">invisible reCAPTCHA</span> helps reduce spam signups by bot mitigation technology.
         </p>
-        <label className="flex items-center gap-2 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={form.recaptcha}
-            onChange={() => set('recaptcha', !form.recaptcha)}
-            className="w-4 h-4 accent-brand-green"
-          />
-          <span className="text-sm text-white">Enable invisible reCAPTCHA</span>
-        </label>
+        <s-checkbox
+          label="Enable invisible reCAPTCHA"
+          checked={form.recaptcha || undefined}
+          onChange={() => set('recaptcha', !form.recaptcha)}
+        />
       </div>
 
       {/* ── 7. Marketing Consent ── */}
@@ -634,15 +671,11 @@ export default function CampaignBuilder() {
         <p className="text-xs text-dark-400 mb-4">
           When enabled, entrants will see an optional checkbox to consent to marketing emails. This helps build trust and improves deliverability. Recommended for GDPR, CAN, and other regulations.
         </p>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-3">
-          <input
-            type="checkbox"
-            checked={form.marketingConsent}
-            onChange={() => set('marketingConsent', !form.marketingConsent)}
-            className="w-4 h-4 accent-brand-green"
-          />
-          <span className="text-sm text-white">Show marketing consent checkbox to entrants</span>
-        </label>
+        <s-checkbox
+          label="Show marketing consent checkbox to entrants"
+          checked={form.marketingConsent || undefined}
+          onChange={() => set('marketingConsent', !form.marketingConsent)}
+        />
         <p className="text-xs text-dark-500">
           Consent notice is included in your ESP report. See integration details in Section 4 for ESP-specific behavior.
         </p>
@@ -652,26 +685,20 @@ export default function CampaignBuilder() {
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="8" icon={Lock} title="Password Protection" />
         <p className="text-xs text-dark-400 mb-4">Restrict your giveaway to only people who have the password — great for exclusive or invite-only campaigns.</p>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
-          <button
-            type="button"
-            onClick={() => set('passwordProtected', !form.passwordProtected)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${form.passwordProtected ? 'bg-brand-green' : 'bg-dark-600'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${form.passwordProtected ? 'left-6' : 'left-1'}`} />
-          </button>
-          <span className="text-sm text-white">Enable password protection</span>
-        </label>
+        <s-checkbox
+          label="Enable password protection"
+          checked={form.passwordProtected || undefined}
+          onChange={() => set('passwordProtected', !form.passwordProtected)}
+        />
         {form.passwordProtected && (
-          <InputField label="Entry Password">
-            <input
-              type="text"
+          <div className="mt-4">
+            <s-text-field
+              label="Entry Password"
               value={form.password}
-              onChange={(e) => set('password', e.target.value)}
               placeholder="e.g. SUMMER2024"
-              className={inputCls}
+              onInput={(e) => set('password', e.target.value)}
             />
-          </InputField>
+          </div>
         )}
       </div>
 
@@ -679,40 +706,31 @@ export default function CampaignBuilder() {
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="9" icon={MapPin} title="Geographic Restrictions" />
         <p className="text-xs text-dark-400 mb-4">Limit entries to specific countries. Useful for prize fulfilment, legal compliance, or regional campaigns.</p>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
-          <button
-            type="button"
-            onClick={() => set('geoEnabled', !form.geoEnabled)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${form.geoEnabled ? 'bg-brand-green' : 'bg-dark-600'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${form.geoEnabled ? 'left-6' : 'left-1'}`} />
-          </button>
-          <span className="text-sm text-white">Restrict by country</span>
-        </label>
+        <s-checkbox
+          label="Restrict by country"
+          checked={form.geoEnabled || undefined}
+          onChange={() => set('geoEnabled', !form.geoEnabled)}
+        />
         {form.geoEnabled && (
-          <div>
+          <div className="mt-4">
             <p className="text-xs text-dark-400 mb-2">Select allowed countries (leave empty = all countries):</p>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
               {COUNTRIES.map((country) => {
                 const selected = form.allowedCountries.includes(country)
                 return (
-                  <button
+                  <s-button
                     key={country}
                     type="button"
+                    variant={selected ? 'primary' : 'secondary'}
                     onClick={() => setForm((f) => ({
                       ...f,
                       allowedCountries: selected
                         ? f.allowedCountries.filter((c) => c !== country)
                         : [...f.allowedCountries, country],
                     }))}
-                    className={`text-left text-xs px-3 py-2 rounded-lg border transition-colors ${
-                      selected
-                        ? 'border-brand-green/50 bg-brand-green/10 text-white'
-                        : 'border-dark-600 text-dark-400 hover:text-white hover:border-dark-500'
-                    }`}
                   >
                     {country}
-                  </button>
+                  </s-button>
                 )
               })}
             </div>
@@ -727,33 +745,26 @@ export default function CampaignBuilder() {
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="10" icon={UserCheck} title="Age Verification" />
         <p className="text-xs text-dark-400 mb-4">Require entrants to confirm they meet a minimum age — important for legal compliance in many regions.</p>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
-          <button
-            type="button"
-            onClick={() => set('ageVerification', !form.ageVerification)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${form.ageVerification ? 'bg-brand-green' : 'bg-dark-600'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${form.ageVerification ? 'left-6' : 'left-1'}`} />
-          </button>
-          <span className="text-sm text-white">Require age confirmation</span>
-        </label>
+        <s-checkbox
+          label="Require age confirmation"
+          checked={form.ageVerification || undefined}
+          onChange={() => set('ageVerification', !form.ageVerification)}
+        />
         {form.ageVerification && (
-          <div className="space-y-3">
-            <InputField label="Minimum Age">
-              <input
-                type="number" min="13" max="99"
-                value={form.minimumAge}
-                onChange={(e) => set('minimumAge', parseInt(e.target.value) || 18)}
-                className={inputCls}
-              />
-            </InputField>
-            <InputField label="Consent Checkbox Text">
-              <input
-                value={form.ageConsentText}
-                onChange={(e) => set('ageConsentText', e.target.value)}
-                className={inputCls}
-              />
-            </InputField>
+          <div className="space-y-3 mt-4">
+            <s-text-field
+              label="Minimum Age"
+              type="number"
+              min="13"
+              max="99"
+              value={form.minimumAge}
+              onInput={(e) => set('minimumAge', parseInt(e.target.value) || 18)}
+            />
+            <s-text-field
+              label="Consent Checkbox Text"
+              value={form.ageConsentText}
+              onInput={(e) => set('ageConsentText', e.target.value)}
+            />
           </div>
         )}
       </div>
@@ -762,26 +773,23 @@ export default function CampaignBuilder() {
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="11" icon={Share2} title="Referral Tracking" />
         <p className="text-xs text-dark-400 mb-4">Auto-generate unique referral links for each entrant. When someone signs up via a referral link, both parties get bonus entries.</p>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
-          <button
-            type="button"
-            onClick={() => set('referralEnabled', !form.referralEnabled)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${form.referralEnabled ? 'bg-brand-green' : 'bg-dark-600'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${form.referralEnabled ? 'left-6' : 'left-1'}`} />
-          </button>
-          <span className="text-sm text-white">Enable referral tracking</span>
-        </label>
+        <s-checkbox
+          label="Enable referral tracking"
+          checked={form.referralEnabled || undefined}
+          onChange={() => set('referralEnabled', !form.referralEnabled)}
+        />
         {form.referralEnabled && (
-          <InputField label="Bonus Entries Per Referral">
-            <input
-              type="number" min="1" max="20"
+          <div className="mt-4">
+            <s-text-field
+              label="Bonus Entries Per Referral"
+              type="number"
+              min="1"
+              max="20"
               value={form.referralBonusEntries}
-              onChange={(e) => set('referralBonusEntries', parseInt(e.target.value) || 2)}
-              className={inputCls + ' max-w-[160px]'}
+              details="Both referrer and new entrant receive this many bonus entries."
+              onInput={(e) => set('referralBonusEntries', parseInt(e.target.value) || 2)}
             />
-            <p className="text-xs text-dark-500 mt-1">Both referrer and new entrant receive this many bonus entries.</p>
-          </InputField>
+          </div>
         )}
       </div>
 
@@ -789,50 +797,56 @@ export default function CampaignBuilder() {
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="12" icon={FlaskConical} title="A/B Testing" />
         <p className="text-xs text-dark-400 mb-4">Split traffic between two landing page variants to see which converts better. The winner is determined automatically.</p>
-        <label className="flex items-center gap-2 cursor-pointer select-none mb-4">
-          <button
-            type="button"
-            onClick={() => set('abTestEnabled', !form.abTestEnabled)}
-            className={`relative w-11 h-6 rounded-full transition-colors ${form.abTestEnabled ? 'bg-brand-green' : 'bg-dark-600'}`}
-          >
-            <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${form.abTestEnabled ? 'left-6' : 'left-1'}`} />
-          </button>
-          <span className="text-sm text-white">Enable A/B test</span>
-        </label>
+        <s-checkbox
+          label="Enable A/B test"
+          checked={form.abTestEnabled || undefined}
+          onChange={() => set('abTestEnabled', !form.abTestEnabled)}
+        />
         {form.abTestEnabled && (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="border border-dark-600 rounded-xl p-4">
                 <p className="text-xs font-semibold text-brand-green mb-2">Variant A</p>
-                <InputField label="Name">
-                  <input value={form.abVariantA.name} onChange={(e) => setForm((f) => ({ ...f, abVariantA: { ...f.abVariantA, name: e.target.value } }))} className={inputCls} />
-                </InputField>
+                <s-text-field
+                  label="Name"
+                  value={form.abVariantA.name}
+                  onInput={(e) => setForm((f) => ({ ...f, abVariantA: { ...f.abVariantA, name: e.target.value } }))}
+                />
                 <div className="mt-3">
-                  <InputField label="Headline / Description">
-                    <input value={form.abVariantA.description} onChange={(e) => setForm((f) => ({ ...f, abVariantA: { ...f.abVariantA, description: e.target.value } }))} placeholder="Original headline..." className={inputCls} />
-                  </InputField>
+                  <s-text-field
+                    label="Headline / Description"
+                    value={form.abVariantA.description}
+                    placeholder="Original headline..."
+                    onInput={(e) => setForm((f) => ({ ...f, abVariantA: { ...f.abVariantA, description: e.target.value } }))}
+                  />
                 </div>
               </div>
               <div className="border border-dark-600 rounded-xl p-4">
                 <p className="text-xs font-semibold text-amber-400 mb-2">Variant B</p>
-                <InputField label="Name">
-                  <input value={form.abVariantB.name} onChange={(e) => setForm((f) => ({ ...f, abVariantB: { ...f.abVariantB, name: e.target.value } }))} className={inputCls} />
-                </InputField>
+                <s-text-field
+                  label="Name"
+                  value={form.abVariantB.name}
+                  onInput={(e) => setForm((f) => ({ ...f, abVariantB: { ...f.abVariantB, name: e.target.value } }))}
+                />
                 <div className="mt-3">
-                  <InputField label="Headline / Description">
-                    <input value={form.abVariantB.description} onChange={(e) => setForm((f) => ({ ...f, abVariantB: { ...f.abVariantB, description: e.target.value } }))} placeholder="Alternative headline..." className={inputCls} />
-                  </InputField>
+                  <s-text-field
+                    label="Headline / Description"
+                    value={form.abVariantB.description}
+                    placeholder="Alternative headline..."
+                    onInput={(e) => setForm((f) => ({ ...f, abVariantB: { ...f.abVariantB, description: e.target.value } }))}
+                  />
                 </div>
               </div>
             </div>
-            <InputField label={`Traffic Split — Variant A: ${form.abSplit}% · Variant B: ${100 - form.abSplit}%`}>
+            <div>
+              <p className="text-xs text-dark-400 mb-2">Traffic Split — Variant A: {form.abSplit}% · Variant B: {100 - form.abSplit}%</p>
               <input
                 type="range" min="10" max="90" step="5"
                 value={form.abSplit}
                 onChange={(e) => set('abSplit', parseInt(e.target.value))}
                 className="w-full accent-brand-green"
               />
-            </InputField>
+            </div>
           </div>
         )}
       </div>
@@ -847,65 +861,66 @@ export default function CampaignBuilder() {
             {form.customFields.map((field, i) => (
               <div key={field.id} className="flex items-center gap-3 bg-dark-700 border border-dark-600 rounded-lg px-3 py-2">
                 <div className="flex-1 grid grid-cols-3 gap-2">
-                  <input
+                  <s-text-field
+                    label="Field label"
+                    labelaccessibilityvisibility="hidden"
                     value={field.label}
-                    onChange={(e) => setForm((f) => ({ ...f, customFields: f.customFields.map((cf, idx) => idx === i ? { ...cf, label: e.target.value } : cf) }))}
                     placeholder="Field label"
-                    className="bg-dark-800 border border-dark-500 rounded px-2 py-1 text-xs text-white placeholder-dark-400 focus:outline-none"
+                    onInput={(e) => setForm((f) => ({ ...f, customFields: f.customFields.map((cf, idx) => idx === i ? { ...cf, label: e.target.value } : cf) }))}
                   />
-                  <select
+                  <s-select
+                    label="Field type"
+                    labelaccessibilityvisibility="hidden"
                     value={field.type}
                     onChange={(e) => setForm((f) => ({ ...f, customFields: f.customFields.map((cf, idx) => idx === i ? { ...cf, type: e.target.value } : cf) }))}
-                    className="bg-dark-800 border border-dark-500 rounded px-2 py-1 text-xs text-white focus:outline-none"
                   >
-                    {CUSTOM_FIELD_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <label className="flex items-center gap-1.5 text-xs text-dark-400">
-                    <input
-                      type="checkbox"
-                      checked={field.required}
-                      onChange={(e) => setForm((f) => ({ ...f, customFields: f.customFields.map((cf, idx) => idx === i ? { ...cf, required: e.target.checked } : cf) }))}
-                      className="accent-brand-green"
-                    />
-                    Required
-                  </label>
+                    {CUSTOM_FIELD_TYPES.map((t) => <s-option key={t} value={t}>{t}</s-option>)}
+                  </s-select>
+                  <s-checkbox
+                    label="Required"
+                    checked={field.required || undefined}
+                    onChange={(e) => setForm((f) => ({ ...f, customFields: f.customFields.map((cf, idx) => idx === i ? { ...cf, required: e.target.checked } : cf) }))}
+                  />
                 </div>
-                <button
+                <s-button
                   type="button"
+                  variant="tertiary"
+                  tone="critical"
+                  icon="delete"
+                  accessibilityLabel="Remove field"
                   onClick={() => setForm((f) => ({ ...f, customFields: f.customFields.filter((_, idx) => idx !== i) }))}
-                  className="text-dark-500 hover:text-red-400 transition-colors"
-                >
-                  <Trash2 size={13} />
-                </button>
+                />
               </div>
             ))}
           </div>
         )}
 
-        <button
+        <s-button
           type="button"
+          variant="secondary"
+          icon="plus"
           onClick={() => setForm((f) => ({ ...f, customFields: [...f.customFields, { id: Date.now(), label: '', type: 'text', required: false }] }))}
-          className="flex items-center gap-2 text-xs px-4 py-2 border border-dashed border-dark-500 rounded-lg text-dark-400 hover:text-white hover:border-dark-400 transition-colors"
         >
-          <Plus size={13} /> Add Custom Field
-        </button>
+          Add Custom Field
+        </s-button>
       </div>
 
       {/* ── Submit ── */}
       <div className="flex items-center gap-3 pb-6">
-        <button
+        <s-button
           type="button"
+          variant="secondary"
           onClick={() => navigate('/dashboard')}
-          className="px-5 py-2.5 border border-dark-500 text-dark-400 text-sm rounded-lg hover:text-white hover:border-dark-400 transition-colors"
         >
           Cancel
-        </button>
-        <button
+        </s-button>
+        <s-button
           type="submit"
-          className="flex items-center gap-2 px-6 py-2.5 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors"
+          variant="primary"
+          icon="save"
         >
-          Save <ChevronRight size={15} />
-        </button>
+          Save Giveaway
+        </s-button>
       </div>
     </form>
   )

@@ -3,8 +3,6 @@ import { useStore } from '../store/useStore'
 import { Code, QrCode, Copy, Check, Download, Smartphone, Monitor } from 'lucide-react'
 import QRCode from 'qrcode'
 
-const BASE_URL = 'https://give.shop/c/summer-sale'
-
 export default function EmbedWidget() {
   const { activeCampaign } = useStore()
   const [copied, setCopied] = useState(null)
@@ -14,6 +12,7 @@ export default function EmbedWidget() {
   const [theme, setTheme] = useState('dark')
   const canvasRef = useRef(null)
 
+  const BASE_URL = `${window.location.origin}/g/${activeCampaign?.id || 'campaign-id'}`
   const giveawayUrl = `${BASE_URL}?theme=${theme}`
 
   useEffect(() => {

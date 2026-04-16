@@ -53,13 +53,13 @@ function ActionMenu({ campaign, onEdit, onDuplicate, onView, onDelete, onSetStat
 
   return (
     <div>
-      <button
+      <s-button
         ref={btnRef}
+        variant="tertiary"
+        icon="three-dots-horizontal"
+        accessibilityLabel="Campaign actions"
         onClick={handleOpen}
-        className="w-8 h-8 flex items-center justify-center rounded-lg text-dark-400 hover:text-white hover:bg-dark-600 transition-colors"
-      >
-        <MoreVertical size={15} />
-      </button>
+      />
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
@@ -67,15 +67,16 @@ function ActionMenu({ campaign, onEdit, onDuplicate, onView, onDelete, onSetStat
             className="fixed z-50 w-48 bg-dark-700 border border-dark-500 rounded-xl shadow-2xl overflow-hidden"
             style={{ top: dropPos.top, right: dropPos.right }}
           >
-            {items.map(({ label, icon: Icon, action, color }) => (
-              <button
+            {items.map(({ label, action, color }) => (
+              <s-button
                 key={label}
+                variant="tertiary"
+                tone={color === 'text-red-400' ? 'critical' : 'auto'}
                 onClick={(e) => { e.stopPropagation(); action(); setOpen(false) }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-dark-600 transition-colors text-left ${color || 'text-dark-300 hover:text-white'}`}
+                style={{ width: '100%', justifyContent: 'flex-start' }}
               >
-                <Icon size={14} />
                 {label}
-              </button>
+              </s-button>
             ))}
           </div>
         </>
@@ -135,10 +136,10 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button onClick={() => navigate('/bot-detection')} className="text-xs text-red-400 hover:text-red-300 border border-red-800/50 rounded-lg px-3 py-1 transition-colors">
+              <s-button variant="secondary" tone="critical" onClick={() => navigate('/bot-detection')}>
                 View Details
-              </button>
-              <button onClick={() => dismissBotAlert(botAlerts[0]?.id)} className="text-red-500 hover:text-red-300 transition-colors"><X size={14} /></button>
+              </s-button>
+              <s-button variant="tertiary" tone="critical" icon="x-circle" accessibilityLabel="Dismiss alert" onClick={() => dismissBotAlert(botAlerts[0]?.id)} />
             </div>
           </div>
         </div>
@@ -171,21 +172,19 @@ export default function Dashboard() {
           <h1 className="text-base font-bold text-white shrink-0">Your Giveaways</h1>
           <div className="flex items-center gap-2 flex-1 justify-end">
             {/* Search */}
-            <div className="relative flex-1 max-w-xs">
-              <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-400" />
-              <input
+            <div className="flex-1 max-w-xs">
+              <s-text-field
+                label="Search campaigns"
+                labelaccessibilityvisibility="hidden"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search..."
-                className="w-full bg-dark-700 border border-dark-500 rounded-lg pl-8 pr-3 py-1.5 text-sm text-white placeholder-dark-500 focus:outline-none focus:border-brand-green transition-colors"
+                icon="search"
+                onInput={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button
-              onClick={() => navigate('/campaigns/new')}
-              className="flex items-center gap-1.5 px-3 sm:px-4 py-2 bg-brand-green text-dark-900 font-semibold text-sm rounded-lg hover:bg-brand-green/80 transition-colors shrink-0 whitespace-nowrap"
-            >
-              <Plus size={14} /> <span className="hidden sm:inline">New Giveaway</span><span className="sm:hidden">New</span>
-            </button>
+            <s-button variant="primary" icon="plus" onClick={() => navigate('/campaigns/new')}>
+              New Giveaway
+            </s-button>
           </div>
         </div>
 
@@ -202,12 +201,9 @@ export default function Dashboard() {
             <Gift size={40} className="text-dark-600 mx-auto mb-3" />
             <p className="text-sm font-medium text-white mb-1">No giveaways yet</p>
             <p className="text-xs text-dark-400 mb-5">Create your first campaign to get started</p>
-            <button
-              onClick={() => navigate('/campaigns/new')}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-brand-green text-dark-900 font-semibold text-sm rounded-lg hover:bg-brand-green/80 transition-colors"
-            >
-              <Plus size={14} /> New Giveaway
-            </button>
+            <s-button variant="primary" icon="plus" onClick={() => navigate('/campaigns/new')}>
+              New Giveaway
+            </s-button>
           </div>
         ) : (
           <div className="divide-y divide-dark-700">
@@ -301,28 +297,30 @@ export default function Dashboard() {
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                     {/* Promote / Quick action */}
                     {camp.status === 'active' && (
-                      <button
+                      <s-button
+                        variant="secondary"
+                        icon="trophy"
                         onClick={() => { setActiveCampaign(camp); navigate('/winner') }}
-                        className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-900/30 border border-amber-700/40 text-amber-400 hover:bg-amber-900/50 rounded-lg font-medium transition-colors whitespace-nowrap"
                       >
-                        <Trophy size={12} /> Pick Winner
-                      </button>
+                        Pick Winner
+                      </s-button>
                     )}
                     {camp.status === 'ready-to-award' && (
-                      <button
+                      <s-button
+                        variant="primary"
+                        icon="trophy"
                         onClick={() => { setActiveCampaign(camp); navigate('/winner') }}
-                        className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 bg-amber-500 text-dark-900 hover:bg-amber-400 rounded-lg font-semibold transition-colors whitespace-nowrap"
                       >
-                        <Trophy size={12} /> Award Winner
-                      </button>
+                        Award Winner
+                      </s-button>
                     )}
                     {camp.status === 'draft' && (
-                      <button
+                      <s-button
+                        variant="secondary"
                         onClick={() => { setCampaignStatus(camp.id, 'active'); setActiveCampaign({ ...camp, status: 'active' }) }}
-                        className="hidden sm:flex items-center gap-1.5 text-xs px-3 py-1.5 bg-brand-green/20 border border-brand-green/30 text-brand-green hover:bg-brand-green/30 rounded-lg font-medium transition-colors whitespace-nowrap"
                       >
                         Activate
-                      </button>
+                      </s-button>
                     )}
 
                     <ActionMenu
@@ -349,19 +347,19 @@ export default function Dashboard() {
       {/* Quick actions row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {[
-          { label: 'Analytics',      icon: BarChart2,  to: '/analytics',      color: 'text-teal-400',   bg: 'hover:bg-teal-900/20 hover:border-teal-700/40' },
-          { label: 'Leaderboard',    icon: Trophy,     to: '/leaderboard',    color: 'text-amber-400',  bg: 'hover:bg-amber-900/20 hover:border-amber-700/40' },
-          { label: 'Email Templates',icon: Megaphone,  to: '/email-editor',   color: 'text-blue-400',   bg: 'hover:bg-blue-900/20 hover:border-blue-700/40' },
-          { label: 'Embed & Share',  icon: ChevronRight,to:'/embed',          color: 'text-purple-400', bg: 'hover:bg-purple-900/20 hover:border-purple-700/40' },
-        ].map(({ label, icon: Icon, to, color, bg }) => (
-          <button
+          { label: 'Analytics',       to: '/analytics',   icon: 'chart-bar' },
+          { label: 'Leaderboard',     to: '/leaderboard', icon: 'trophy' },
+          { label: 'Email Templates', to: '/email-editor',icon: 'email' },
+          { label: 'Embed & Share',   to: '/embed',       icon: 'link' },
+        ].map(({ label, to, icon }) => (
+          <s-button
             key={to}
+            variant="secondary"
+            icon={icon}
             onClick={() => navigate(to)}
-            className={`flex items-center gap-3 px-4 py-3 bg-dark-800 border border-dark-600 rounded-xl text-sm font-medium ${color} transition-all ${bg}`}
           >
-            <Icon size={15} />
             {label}
-          </button>
+          </s-button>
         ))}
       </div>
     </div>

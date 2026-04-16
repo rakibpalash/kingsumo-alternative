@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
+import { triggerEntryIntegrations } from '../lib/integrations'
 
 // ── Fraud helpers ─────────────────────────────────────────────
 const BURNER_DOMAINS = [
@@ -340,6 +341,18 @@ export const useStore = create(
           if (error) console.error('addEntry:', error)
         }
 
+        // Fire all active integrations (pixels, webhook, ESP sync)
+        if (!suspicious) {
+          const { integrationConnections, webhookConfig, trackingPixels } = get()
+          triggerEntryIntegrations({
+            entry: newEntry,
+            campaign: activeCampaign,
+            integrationConnections,
+            webhookConfig,
+            trackingPixels,
+          })
+        }
+
         return { success: !suspicious, suspicious }
       },
 
@@ -385,8 +398,16 @@ export const useStore = create(
         }))
       },
 
-      saveTrackingPixels: (pixels) => set({ trackingPixels: pixels }),
-      saveWebhook:        (config) => set({ webhookConfig: config }),
+      saveTrackingPixels: (pixels) => {
+        set({ trackingPixels: pixels })
+        // Inject scripts immediately when saved
+        import('../lib/integrations').then(({ initFacebookPixel, initGoogleAnalytics, initGTM }) => {
+          if (pixels.fbPixelId) initFacebookPixel(pixels.fbPixelId)
+          if (pixels.gaId)      initGoogleAnalytics(pixels.gaId)
+          if (pixels.gtmId)     initGTM(pixels.gtmId)
+        })
+      },
+      saveWebhook: (config) => set({ webhookConfig: config }),
 
       // ── Email templates ───────────────────────────────────
       saveEmailTemplate: (id, template) => {

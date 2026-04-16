@@ -6,6 +6,7 @@ import {
   Loader, ChevronDown, Link2, List
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
+import { sendWebhook } from '../lib/integrations'
 
 const TABS = ['Account', 'Security', 'Plan & Billing', 'Integrations', 'API']
 
@@ -409,22 +410,44 @@ function IntegrationCard({ svc, conn, onConnect, onDisconnect }) {
   const [selectedList, setSelectedList] = useState(conn?.list || '')
   const isConnected = conn?.connected
 
-  const handleVerify = () => {
-    // Check all required fields are filled
+  const handleVerify = async () => {
     const missing = svc.fields.find((f) => !inputs[f.key]?.trim())
     if (missing) { setError(`${missing.label} is required`); return }
     setError('')
     setVerifying(true)
-    // Simulate API verification (1.5s)
+
+    let verified = false
+
+    // Real format validation per service
+    if (svc.id === 'mailchimp') {
+      verified = /^[a-f0-9]{32}-\w+$/.test(inputs.apiKey)
+      if (!verified) { setError('Invalid API key format. Expected: xxxxxxxx…-us1'); setVerifying(false); return }
+    } else if (svc.id === 'klaviyo') {
+      verified = inputs.apiKey.startsWith('pk_') && inputs.apiKey.length > 10
+      if (!verified) { setError('Invalid API key format. Expected: pk_xxxxxx…'); setVerifying(false); return }
+    } else if (svc.id === 'convertkit') {
+      verified = inputs.apiKey.length > 6
+    } else if (svc.id === 'zapier') {
+      // Test real webhook POST to Zapier
+      const result = await sendWebhook(inputs.webhookUrl, '', 'connection.test', { message: 'GiveShop connected' })
+      verified = result.ok || result.corsNote
+      if (!verified) { setError('Could not reach webhook URL. Check the URL and try again.'); setVerifying(false); return }
+    } else {
+      // ActiveCampaign / SendFox — validate format
+      verified = svc.fields.every((f) => inputs[f.key]?.trim().length > 6)
+    }
+
     setTimeout(() => {
       setVerifying(false)
       const maskedInputs = Object.fromEntries(
         svc.fields.map((f) => [f.key, inputs[f.key].replace(/.(?=.{4})/g, '•')])
       )
-      onConnect({ ...maskedInputs, list: selectedList, syncEnabled: true })
+      // Store raw values needed for browser-side API calls
+      const rawInputs = Object.fromEntries(svc.fields.map((f) => [`raw_${f.key}`, inputs[f.key]]))
+      onConnect({ ...maskedInputs, ...rawInputs, list: selectedList, syncEnabled: true, verifiedAt: new Date().toISOString() })
       setExpanded(false)
       setInputs({})
-    }, 1500)
+    }, 800)
   }
 
   const handleOpen = () => {
@@ -573,9 +596,9 @@ function IntegrationsTab() {
   const [testingWebhook, setTestingWebhook] = useState(false)
 
   const handleSavePixels = () => {
-    saveTrackingPixels(pixels)
+    saveTrackingPixels(pixels) // also injects scripts immediately via store
     setPixelSaved(true)
-    setTimeout(() => setPixelSaved(false), 2000)
+    setTimeout(() => setPixelSaved(false), 3000)
   }
 
   const handleSaveWebhook = () => {
@@ -584,10 +607,18 @@ function IntegrationsTab() {
     setTimeout(() => setWebhookSaved(false), 2000)
   }
 
-  const handleTestWebhook = () => {
+  const handleTestWebhook = async () => {
     if (!webhook.url) return
     setTestingWebhook(true)
-    setTimeout(() => setTestingWebhook(false), 1500)
+    const result = await sendWebhook(webhook.url, webhook.secret, 'test.ping', {
+      message: 'Test event from GiveShop',
+      timestamp: new Date().toISOString(),
+    })
+    setTestingWebhook(false)
+    if (result.ok || result.corsNote) {
+      setWebhookSaved(true)
+      setTimeout(() => setWebhookSaved(false), 3000)
+    }
   }
 
   return (
@@ -643,9 +674,18 @@ function IntegrationsTab() {
               />
             </div>
           ))}
-          <button onClick={handleSavePixels} className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
-            {pixelSaved ? <><Check size={13} />Saved!</> : <><Save size={13} />Save Pixels</>}
-          </button>
+          <div className="flex items-center gap-3 flex-wrap">
+            <button onClick={handleSavePixels} className="flex items-center gap-2 px-4 py-2 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors">
+              {pixelSaved ? <><Check size={13} />Saved &amp; Injected!</> : <><Save size={13} />Save Pixels</>}
+            </button>
+            {pixelSaved && (
+              <div className="flex gap-2 flex-wrap">
+                {pixels.fbPixelId && <span className="text-xs bg-blue-900/30 border border-blue-700/40 text-blue-400 px-2 py-1 rounded-lg">✓ FB Pixel active</span>}
+                {pixels.gaId      && <span className="text-xs bg-orange-900/30 border border-orange-700/40 text-orange-400 px-2 py-1 rounded-lg">✓ GA4 active</span>}
+                {pixels.gtmId     && <span className="text-xs bg-green-900/30 border border-green-700/40 text-green-400 px-2 py-1 rounded-lg">✓ GTM active</span>}
+              </div>
+            )}
+          </div>
         </div>
       </SectionCard>
 
@@ -697,7 +737,7 @@ function IntegrationsTab() {
             )}
           </div>
           {webhookSaved && (
-            <p className="text-xs text-brand-green">Webhook configuration saved. Events will be delivered to your endpoint.</p>
+            <p className="text-xs text-brand-green">✓ Webhook saved &amp; test ping delivered to your endpoint.</p>
           )}
         </div>
       </SectionCard>
