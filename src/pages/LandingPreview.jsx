@@ -30,8 +30,10 @@ export default function LandingPreview() {
     setEntered((s) => new Set([...s, method]))
   }
 
+  const entryUrl = campaign ? `${window.location.origin}/enter/${campaign.id}` : ''
+
   const handleCopy = () => {
-    navigator.clipboard.writeText('yourstore.com/giveaway')
+    navigator.clipboard.writeText(entryUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -51,7 +53,7 @@ export default function LandingPreview() {
         <div>
           <p className="text-xs text-dark-400">Landing URL</p>
           <div className="flex items-center gap-2 mt-0.5">
-            <code className="text-sm text-brand-teal">yourstore.com/giveaway</code>
+            <code className="text-sm text-brand-teal">{entryUrl}</code>
             <button onClick={handleCopy} className="text-dark-400 hover:text-white transition-colors">
               {copied ? <Check size={13} className="text-brand-green" /> : <Copy size={13} />}
             </button>
@@ -80,8 +82,8 @@ export default function LandingPreview() {
             <div className="w-3 h-3 rounded-full bg-amber-500/60" />
             <div className="w-3 h-3 rounded-full bg-brand-green/60" />
           </div>
-          <div className="flex-1 bg-dark-800 rounded-md px-3 py-1 text-xs text-dark-400 text-center">
-            yourstore.com/giveaway
+          <div className="flex-1 bg-dark-800 rounded-md px-3 py-1 text-xs text-dark-400 text-center truncate">
+            {entryUrl}
           </div>
         </div>
 
