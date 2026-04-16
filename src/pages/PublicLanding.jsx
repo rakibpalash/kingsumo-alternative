@@ -67,6 +67,7 @@ export default function PublicLanding() {
   // Entry form state
   const [name, setName]   = useState('')
   const [email, setEmail] = useState('')
+  const [customFieldValues, setCustomFieldValues] = useState({})
   const [step, setStep]   = useState('form') // 'form' | 'submitting' | 'done' | 'blocked'
   const [formError, setFormError] = useState('')
   const [myEntry, setMyEntry] = useState(null)
@@ -101,6 +102,7 @@ export default function PublicLanding() {
         password: s.password || '',
         rulesText: s.rulesText || '',
         termsUrl: s.termsUrl || '',
+        customFields: s.customFields || [],
       })
 
       // Get entry count
@@ -124,6 +126,12 @@ export default function PublicLanding() {
     e.preventDefault()
     if (!name.trim()) { setFormError('Name is required'); return }
     if (!email.trim() || !email.includes('@')) { setFormError('Valid email is required'); return }
+    // Validate required custom fields
+    for (const cf of (campaign.customFields || [])) {
+      if (cf.required && !customFieldValues[cf.id]?.trim()) {
+        setFormError(`"${cf.label || 'A required field'}" is required`); return
+      }
+    }
     setFormError('')
     setStep('submitting')
 
@@ -143,6 +151,7 @@ export default function PublicLanding() {
       referred_by: null,
       referrals: 0,
       ip,
+      custom_fields: Object.keys(customFieldValues).length ? customFieldValues : null,
     })
 
     if (dbError) {
@@ -282,6 +291,43 @@ export default function PublicLanding() {
                       className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors"
                     />
                   </div>
+
+                  {/* Custom fields */}
+                  {(campaign.customFields || []).map((cf) => (
+                    <div key={cf.id}>
+                      <label className="block text-xs text-white/50 mb-1.5">
+                        {cf.label || 'Field'}{cf.required && <span className="text-red-400 ml-1">*</span>}
+                      </label>
+                      {cf.type === 'checkbox' ? (
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={!!customFieldValues[cf.id]}
+                            onChange={(e) => setCustomFieldValues((v) => ({ ...v, [cf.id]: e.target.checked ? 'yes' : '' }))}
+                            className="w-4 h-4 accent-[var(--color)]"
+                          />
+                          <span className="text-sm text-white/70">{cf.label}</span>
+                        </label>
+                      ) : cf.type === 'dropdown' ? (
+                        <select
+                          value={customFieldValues[cf.id] || ''}
+                          onChange={(e) => setCustomFieldValues((v) => ({ ...v, [cf.id]: e.target.value }))}
+                          className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-white/50 transition-colors"
+                        >
+                          <option value="">Select…</option>
+                          {(cf.options || []).map((opt) => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      ) : (
+                        <input
+                          type={cf.type === 'email' ? 'email' : cf.type === 'number' ? 'number' : cf.type === 'phone' ? 'tel' : 'text'}
+                          value={customFieldValues[cf.id] || ''}
+                          onChange={(e) => setCustomFieldValues((v) => ({ ...v, [cf.id]: e.target.value }))}
+                          placeholder={cf.placeholder || cf.label}
+                          className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors"
+                        />
+                      )}
+                    </div>
+                  ))}
                 </div>
                 {formError && <p className="text-xs text-red-400 mb-3">{formError}</p>}
                 <button

@@ -29,6 +29,7 @@ create table if not exists public.entries (
   referred_by   text,
   referrals     integer default 0,
   ip            text,
+  custom_fields jsonb,
   entered_at    timestamptz default now(),
   constraint entries_campaign_email_unique unique (campaign_id, email)
 );
