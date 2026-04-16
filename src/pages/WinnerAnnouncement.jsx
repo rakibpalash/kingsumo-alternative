@@ -6,18 +6,18 @@ export default function WinnerAnnouncement() {
   const { winner, entries, activeCampaign } = useStore()
   const [copied, setCopied] = useState(false)
 
-  const proofUrl = winner?.proofUrl || `giveshop.app/proof/demo`
+  const proofUrl = winner?.proofUrl || `${window.location.origin}/proof/demo`
   const validEntries = entries.filter((e) => !e.suspicious)
 
   const copy = () => {
-    navigator.clipboard.writeText(`https://${proofUrl}`)
+    navigator.clipboard.writeText(proofUrl)
     setCopied(true); setTimeout(() => setCopied(false), 2000)
   }
 
   const shareLinks = [
-    { label: 'X / Twitter', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎉 We have a winner! Congratulations to our ${activeCampaign?.title || 'giveaway'} winner! Proof: https://${proofUrl}`)}`, color: 'bg-black hover:bg-zinc-800' },
-    { label: 'Facebook',    href: `https://www.facebook.com/sharer/sharer.php?u=https://${proofUrl}`, color: 'bg-blue-700 hover:bg-blue-600' },
-    { label: 'LinkedIn',    href: `https://www.linkedin.com/sharing/share-offsite/?url=https://${proofUrl}`, color: 'bg-blue-800 hover:bg-blue-700' },
+    { label: 'X / Twitter', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎉 We have a winner! Congratulations to our ${activeCampaign?.title || 'giveaway'} winner! Proof: ${proofUrl}`)}`, color: 'bg-black hover:bg-zinc-800' },
+    { label: 'Facebook',    href: `https://www.facebook.com/sharer/sharer.php?u=${proofUrl}`, color: 'bg-blue-700 hover:bg-blue-600' },
+    { label: 'LinkedIn',    href: `https://www.linkedin.com/sharing/share-offsite/?url=${proofUrl}`, color: 'bg-blue-800 hover:bg-blue-700' },
   ]
 
   if (!winner) {
@@ -76,12 +76,12 @@ export default function WinnerAnnouncement() {
           <p className="text-xs text-dark-400 mb-2">Proof URL — publicly accessible</p>
           <div className="flex items-center gap-2">
             <div className="flex-1 bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-brand-green font-mono truncate">
-              https://{proofUrl}
+              {proofUrl}
             </div>
             <button onClick={copy} className="flex items-center gap-1.5 px-3 py-2 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-xs transition-colors shrink-0">
               {copied ? <><Check size={12} className="text-brand-green" />Copied</> : <><Copy size={12} />Copy</>}
             </button>
-            <a href={`https://${proofUrl}`} target="_blank" rel="noopener noreferrer"
+            <a href={proofUrl} target="_blank" rel="noopener noreferrer"
               className="p-2 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg transition-colors shrink-0">
               <ExternalLink size={14} />
             </a>
