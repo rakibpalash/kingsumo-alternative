@@ -55,9 +55,9 @@ export default function Participants() {
     a.click()
   }
 
-  const handleTestEntry = () => {
+  const handleTestEntry = async () => {
     if (!testForm.name || !testForm.email) return
-    const result = addEntry({ ...testForm, ip: testForm.ip || `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`, entries: { email: 1, instagram: 2, tiktok: 2, share: 3, visit: 1, purchase: 5 }[testForm.method] })
+    const result = await addEntry({ ...testForm, ip: testForm.ip || `10.0.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`, entries: { email: 1, instagram: 2, tiktok: 2, share: 3, visit: 1, purchase: 5 }[testForm.method] })
     setTestResult(result)
     setTimeout(() => { setTestResult(null); setShowAdd(false); setTestForm({ name: '', email: '', method: 'email', ip: '' }) }, 2500)
   }

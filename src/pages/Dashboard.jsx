@@ -155,7 +155,7 @@ export default function Dashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState(null)
 
   const validEntries  = entries.filter((e) => !e.suspicious)
-  const totalEntries  = campaigns.reduce((s) => s + validEntries.length, 0)
+  const totalEntries  = validEntries.length
   const activeCount   = campaigns.filter((c) => c.status === 'active').length
   const fraudCount    = entries.filter((e) => e.suspicious).length
 

@@ -144,17 +144,20 @@ const DEFAULT_ENTRY_ACTIONS = Object.entries(ENTRY_ACTION_CONFIG).map(([type, cf
   entries: 2,
 }))
 
-const SectionContext = createContext(null)
+const SectionContext = createContext({ forceOpen: null, resetForce: () => {} })
 
 function Section({ number, icon: Icon, title, defaultOpen = true, children }) {
-  const forceOpen = useContext(SectionContext)
+  const { forceOpen, resetForce } = useContext(SectionContext)
   const [open, setOpen] = useState(defaultOpen)
   const isOpen = forceOpen === null ? open : forceOpen
   return (
     <div className="bg-dark-800 border border-dark-500 rounded-xl overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (forceOpen !== null) resetForce()
+          setOpen((v) => (forceOpen !== null ? !forceOpen : !v))
+        }}
         className="w-full flex items-center gap-2 px-6 py-4 hover:bg-dark-700/40 transition-colors text-left"
       >
         <span className="w-5 h-5 rounded-full bg-brand-green text-dark-900 text-xs font-bold flex items-center justify-center shrink-0">
@@ -406,10 +409,9 @@ export default function CampaignBuilder() {
 
   // null = each section controls itself, true = all expanded, false = all collapsed
   const [allOpen, setAllOpen] = useState(null)
-  const handleExpandAll  = () => setAllOpen(true)
+  const handleExpandAll   = () => setAllOpen(true)
   const handleCollapseAll = () => setAllOpen(false)
-  // Reset to independent control after toggling so individual clicks still work
-  const handleSectionClick = () => { if (allOpen !== null) setAllOpen(null) }
+  const resetAllOpen      = () => setAllOpen(null)
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
@@ -438,7 +440,7 @@ export default function CampaignBuilder() {
         </button>
       </div>
 
-      <SectionContext.Provider value={allOpen}>
+      <SectionContext.Provider value={{ forceOpen: allOpen, resetForce: resetAllOpen }}>
       {/* ── 1. Giveaway Information ── */}
       <Section number="1" title="Giveaway Information">
 
