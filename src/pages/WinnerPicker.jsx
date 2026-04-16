@@ -304,7 +304,7 @@ export default function WinnerPicker() {
             </div>
             <div className="flex items-center gap-2">
               <code className="text-xs text-brand-teal flex-1 truncate">{winner.proofUrl}</code>
-              <button className="text-dark-400 hover:text-white transition-colors shrink-0"><ExternalLink size={13} /></button>
+              <a href={winner.proofUrl} target="_blank" rel="noopener noreferrer" className="text-dark-400 hover:text-white transition-colors shrink-0"><ExternalLink size={13} /></a>
             </div>
             <p className="text-[11px] text-dark-400 mt-1">Share this URL publicly to prove the draw was fair</p>
           </div>

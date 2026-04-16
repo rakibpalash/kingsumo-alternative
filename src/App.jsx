@@ -19,6 +19,7 @@ import EmbedWidget from './pages/EmbedWidget'
 import WinnerAnnouncement from './pages/WinnerAnnouncement'
 import EmailTemplateEditor from './pages/EmailTemplateEditor'
 import EntryPage from './pages/EntryPage'
+import ProofPage from './pages/ProofPage'
 
 function Spinner() {
   return (
@@ -63,8 +64,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public entry page — no auth required */}
+        {/* Public routes — no auth required */}
         <Route path="/enter/:id" element={<EntryPage />} />
+        <Route path="/proof/:campaignId" element={<ProofPage />} />
 
         {/* Admin — requires auth */}
         <Route path="*" element={

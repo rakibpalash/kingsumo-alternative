@@ -404,7 +404,7 @@ export const useStore = create(
         const winnerData = {
           ...winner,
           pickedAt: new Date().toISOString(),
-          proofUrl: `giveshop.app/proof/${Date.now()}`,
+          proofUrl: `${window.location.origin}/proof/${activeCampaign?.id}`,
         }
 
         set((s) => ({

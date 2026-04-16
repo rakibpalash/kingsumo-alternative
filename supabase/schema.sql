@@ -108,3 +108,11 @@ create policy "public_read_entry_count" on public.entries
       select 1 from public.campaigns where id = entries.campaign_id
     )
   );
+
+-- Anyone can read winners for proof page
+create policy "public_read_winners" on public.winners
+  for select using (
+    exists (
+      select 1 from public.campaigns where id = winners.campaign_id
+    )
+  );
