@@ -6,11 +6,80 @@ import {
 } from 'lucide-react'
 import { generateTitle, generateDescription, generateRules } from '../lib/groq'
 
+import { useStore } from '../store/useStore'
+
 // Minimal inline brand icons (no external dependency)
 const BrandIcon = ({ letter, color }) => (
   <span className="text-xs font-bold" style={{ color }}>{letter}</span>
 )
-import { useStore } from '../store/useStore'
+
+const INTEGRATIONS_CATALOG = [
+  {
+    key: 'mailchimp',
+    name: 'Mailchimp',
+    color: '#FFE01B',
+    letter: 'M',
+    desc: 'Add contestants to a Mailchimp audience',
+    fields: [
+      { key: 'listId',   label: 'Audience ID',    placeholder: 'e.g. a1b2c3d4e5' },
+      { key: 'apiKey',   label: 'API Key',         placeholder: 'e.g. abc123-us1', type: 'password' },
+    ],
+  },
+  {
+    key: 'klaviyo',
+    name: 'Klaviyo',
+    color: '#000000',
+    letter: 'K',
+    desc: 'Subscribe contestants to a Klaviyo list',
+    fields: [
+      { key: 'publicKey', label: 'Public API Key', placeholder: 'e.g. pk_abc123' },
+      { key: 'listId',    label: 'List ID',        placeholder: 'e.g. ABCDEF' },
+    ],
+  },
+  {
+    key: 'convertkit',
+    name: 'ConvertKit',
+    color: '#FB6970',
+    letter: 'C',
+    desc: 'Add contestants to a ConvertKit form',
+    fields: [
+      { key: 'formId', label: 'Form ID', placeholder: 'e.g. 1234567' },
+    ],
+  },
+  {
+    key: 'zapier',
+    name: 'Zapier',
+    color: '#FF4A00',
+    letter: 'Z',
+    desc: 'Send entry data to any Zapier webhook',
+    fields: [
+      { key: 'webhookUrl', label: 'Webhook URL', placeholder: 'https://hooks.zapier.com/...' },
+    ],
+  },
+  {
+    key: 'activecampaign',
+    name: 'ActiveCampaign',
+    color: '#356AE6',
+    letter: 'A',
+    desc: 'Add contacts to an ActiveCampaign list',
+    fields: [
+      { key: 'apiUrl',  label: 'Account URL', placeholder: 'https://yourname.api-us1.com' },
+      { key: 'apiKey',  label: 'API Key',     placeholder: 'Your API key', type: 'password' },
+      { key: 'listId',  label: 'List ID',     placeholder: 'e.g. 1' },
+    ],
+  },
+  {
+    key: 'webhook',
+    name: 'Custom Webhook',
+    color: '#6366F1',
+    letter: 'W',
+    desc: 'POST entry data to any custom URL',
+    fields: [
+      { key: 'url',    label: 'Endpoint URL', placeholder: 'https://yoursite.com/webhook' },
+      { key: 'secret', label: 'Secret (optional)', placeholder: 'HMAC signing secret' },
+    ],
+  },
+]
 
 const COUNTRIES = [
   'United States', 'United Kingdom', 'Canada', 'Australia', 'New Zealand',
@@ -161,9 +230,12 @@ export default function CampaignBuilder() {
     abSplit: 50,
     // Section 13 – custom fields
     customFields: [],
+    // Section 4 – integrations
+    integrations: [],
   })
 
   const [errors, setErrors] = useState({})
+  const [showIntegrationPicker, setShowIntegrationPicker] = useState(false)
   const [aiLoading, setAiLoading] = useState({ title: false, description: false, rules: false })
   const [aiError, setAiError] = useState('')
 
@@ -566,10 +638,75 @@ export default function CampaignBuilder() {
       {/* ── 4. Integrations ── */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <SectionHeader number="4" icon={PlugZap} title="Integrations" />
-        <p className="text-xs text-dark-400 mb-4">Integrations allow you to send new contestant information to third party services.</p>
-        <s-button type="button" variant="primary" icon="plus">
-          Add an Integration
-        </s-button>
+        <p className="text-xs text-dark-400 mb-4">Send new contestant data to third-party services automatically.</p>
+
+        {/* Added integrations */}
+        {form.integrations.length > 0 && (
+          <div className="space-y-3 mb-4">
+            {form.integrations.map((intg) => {
+              const catalog = INTEGRATIONS_CATALOG.find((c) => c.key === intg.key)
+              if (!catalog) return null
+              return (
+                <div key={intg.id} className="border border-dark-500 rounded-xl overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-2.5 bg-dark-700 border-b border-dark-500">
+                    <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: catalog.color + '22' }}>
+                      <BrandIcon letter={catalog.letter} color={catalog.color} />
+                    </div>
+                    <span className="text-sm font-semibold text-white flex-1">{catalog.name}</span>
+                    <button type="button" onClick={() => setForm((f) => ({ ...f, integrations: f.integrations.filter((i) => i.id !== intg.id) }))} className="text-dark-400 hover:text-red-400 transition-colors"><Trash2 size={14} /></button>
+                  </div>
+                  <div className="p-4 bg-dark-800 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {catalog.fields.map((field) => (
+                      <InputField key={field.key} label={field.label}>
+                        <input
+                          type={field.type || 'text'}
+                          value={intg.config[field.key] || ''}
+                          onChange={(e) => setForm((f) => ({ ...f, integrations: f.integrations.map((i) => i.id === intg.id ? { ...i, config: { ...i.config, [field.key]: e.target.value } } : i) }))}
+                          placeholder={field.placeholder}
+                          className={inputCls}
+                        />
+                      </InputField>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+
+        {/* Integration picker */}
+        {showIntegrationPicker ? (
+          <div className="border border-dark-500 rounded-xl p-4 mb-3">
+            <p className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Choose an Integration</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {INTEGRATIONS_CATALOG.map((catalog) => {
+                const alreadyAdded = form.integrations.some((i) => i.key === catalog.key)
+                return (
+                  <button
+                    key={catalog.key}
+                    type="button"
+                    disabled={alreadyAdded}
+                    onClick={() => {
+                      setForm((f) => ({ ...f, integrations: [...f.integrations, { id: Date.now(), key: catalog.key, config: {} }] }))
+                      setShowIntegrationPicker(false)
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-sm transition-all ${alreadyAdded ? 'border-dark-600 opacity-40 cursor-not-allowed' : 'border-dark-500 hover:border-brand-green hover:bg-dark-700 cursor-pointer'}`}
+                  >
+                    <div className="w-5 h-5 rounded flex items-center justify-center shrink-0" style={{ background: catalog.color + '22' }}>
+                      <BrandIcon letter={catalog.letter} color={catalog.color} />
+                    </div>
+                    <span className="text-white truncate">{catalog.name}</span>
+                  </button>
+                )
+              })}
+            </div>
+            <button type="button" onClick={() => setShowIntegrationPicker(false)} className="mt-3 text-xs text-dark-500 hover:text-white transition-colors">Cancel</button>
+          </div>
+        ) : (
+          <s-button type="button" variant="primary" icon="plus" onClick={() => setShowIntegrationPicker(true)}>
+            Add an Integration
+          </s-button>
+        )}
       </div>
 
       {/* ── 5. Rules and Terms ── */}
