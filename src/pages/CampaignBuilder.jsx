@@ -409,9 +409,8 @@ export default function CampaignBuilder() {
 
   // null = each section controls itself, true = all expanded, false = all collapsed
   const [allOpen, setAllOpen] = useState(null)
-  const handleExpandAll   = () => setAllOpen(true)
-  const handleCollapseAll = () => setAllOpen(false)
-  const resetAllOpen      = () => setAllOpen(null)
+  const toggleAllOpen = () => setAllOpen((v) => v === true ? false : true)
+  const resetAllOpen  = () => setAllOpen(null)
 
   return (
     <form onSubmit={handleSubmit} className="max-w-2xl space-y-5">
@@ -423,20 +422,14 @@ export default function CampaignBuilder() {
       )}
 
       {/* ── Expand / Collapse All ── */}
-      <div className="flex items-center justify-end gap-2">
+      <div className="flex items-center justify-end">
         <button
           type="button"
-          onClick={handleExpandAll}
+          onClick={toggleAllOpen}
           className="text-xs text-dark-400 hover:text-white border border-dark-600 hover:border-dark-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
         >
-          <ChevronRight size={12} className="rotate-90" /> Expand All
-        </button>
-        <button
-          type="button"
-          onClick={handleCollapseAll}
-          className="text-xs text-dark-400 hover:text-white border border-dark-600 hover:border-dark-400 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
-        >
-          <ChevronRight size={12} className="-rotate-90" /> Collapse All
+          <ChevronRight size={12} className={allOpen === false ? '-rotate-90' : 'rotate-90'} />
+          {allOpen === false ? 'Expand All' : 'Collapse All'}
         </button>
       </div>
 
