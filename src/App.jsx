@@ -18,6 +18,7 @@ import Leaderboard from './pages/Leaderboard'
 import EmbedWidget from './pages/EmbedWidget'
 import WinnerAnnouncement from './pages/WinnerAnnouncement'
 import EmailTemplateEditor from './pages/EmailTemplateEditor'
+import EntryPage from './pages/EntryPage'
 
 function Spinner() {
   return (
@@ -59,13 +60,18 @@ export default function App() {
     return () => subscription.unsubscribe()
   }, [])
 
-  if (session === undefined) return <Spinner />
-  if (!session) return <AuthPage />
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Layout />}>
+        {/* Public entry page — no auth required */}
+        <Route path="/enter/:id" element={<EntryPage />} />
+
+        {/* Admin — requires auth */}
+        <Route path="*" element={
+          session === undefined ? <Spinner /> :
+          !session ? <AuthPage /> :
+          <Routes>
+            <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard"           element={<Dashboard />} />
           <Route path="campaigns/new"       element={<CampaignBuilder />} />
@@ -81,7 +87,9 @@ export default function App() {
           <Route path="leaderboard"         element={<Leaderboard />} />
           <Route path="embed"               element={<EmbedWidget />} />
           <Route path="email-editor"        element={<EmailTemplateEditor />} />
-        </Route>
+            </Route>
+          </Routes>
+        } />
       </Routes>
     </BrowserRouter>
   )

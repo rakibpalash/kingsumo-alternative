@@ -85,3 +85,26 @@ create policy "own_winners" on public.winners
       where id = winners.campaign_id and user_id = auth.uid()
     )
   );
+
+-- ─── Public Entry Page Policies ──────────────
+-- Run these in Supabase SQL Editor to enable the public /enter/:id page
+
+-- Anyone can read any campaign by ID (for public entry page)
+create policy "public_read_campaigns" on public.campaigns
+  for select using (true);
+
+-- Anyone can insert an entry for any campaign (entry page submission)
+create policy "public_insert_entries" on public.entries
+  for insert with check (
+    exists (
+      select 1 from public.campaigns where id = entries.campaign_id
+    )
+  );
+
+-- Anyone can read entry count for a campaign (shows participant count)
+create policy "public_read_entry_count" on public.entries
+  for select using (
+    exists (
+      select 1 from public.campaigns where id = entries.campaign_id
+    )
+  );
