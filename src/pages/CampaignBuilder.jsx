@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Mail, Upload, Lock, Plus, ChevronUp, ChevronDown,
   Shield, Zap, PlugZap, FileText, MapPin, UserCheck, Share2, FlaskConical, Sliders, Trash2, Sparkles, Loader2, X, Gift,
-  Palette, Settings2, Globe, AlertTriangle, ExternalLink, Save, Search,
+  Palette, Settings2, Globe, AlertTriangle, ExternalLink, Save, Search, Copy, AlertCircle,
 } from 'lucide-react'
 import { generateTitle, generateDescription, generateRules } from '../lib/groq'
 import { fetchShopifyProducts } from '../lib/shopify'
@@ -273,6 +273,19 @@ export default function CampaignBuilder() {
     entryActions: [],
     // reCAPTCHA
     recaptcha: true,
+    // Notifications
+    notifyOnImageUpload: false,
+    // Email confirmation
+    emailConfirmAddress: '',
+    emailConfirmDisplayName: '',
+    // Shop & bot protection
+    shopUrl: '',
+    ipMaxSignups: 2,
+    ipTimeWindow: 60,
+    subnetMaxSignups: 3,
+    subnetTimeWindow: 60,
+    blockVpn: true,
+    rejectDisqualifiedReferral: true,
     // Rules and terms
     rulesText: '',
     termsUrl: '',
@@ -527,10 +540,23 @@ export default function CampaignBuilder() {
 
   const renderTabGiveaway = () => (
     <div className="space-y-5">
-      {/* Competition Information */}
+
+      {/* ── Giveaway Details ── */}
       <div>
-        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Competition Information</h3>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Giveaway Details</h3>
         <div className="space-y-4">
+
+          {/* ID */}
+          {activeCampaign?.id && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-dark-400">ID:</span>
+              <code className="text-xs text-dark-200 bg-dark-700 px-2 py-0.5 rounded">{activeCampaign.id}</code>
+              <button type="button" onClick={() => navigator.clipboard.writeText(activeCampaign.id)} className="text-dark-500 hover:text-brand-green transition-colors" title="Copy ID">
+                <Copy size={12} />
+              </button>
+            </div>
+          )}
+
           {/* Title */}
           <InputField label="Title" required error={errors.title}>
             <div className="flex gap-2">
@@ -575,15 +601,45 @@ export default function CampaignBuilder() {
             </div>
           </InputField>
 
-          {/* Starts / Ends */}
+          {/* Timezone */}
+          <InputField label="Timezone">
+            <div className="flex gap-2">
+              <select value={form.timezone} onChange={(e) => set('timezone', e.target.value)} className={inputCls + ' flex-1'}>
+                {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
+              </select>
+              <button
+                type="button"
+                onClick={() => {
+                  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+                  if (TIMEZONES.includes(tz)) set('timezone', tz)
+                }}
+                className="shrink-0 text-xs px-3 py-2 border border-dark-500 rounded-lg text-dark-300 hover:text-white hover:border-dark-400 transition-colors whitespace-nowrap"
+              >
+                Use my timezone
+              </button>
+            </div>
+          </InputField>
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2.5 flex items-start gap-2">
+            <AlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-300">
+              <strong>Important:</strong> Double-check your timezone selection, especially during daylight saving transitions, as this affects sales tracking accuracy.
+            </p>
+          </div>
+
+          {/* Start / End dates */}
           <div className="grid grid-cols-2 gap-3">
-            <InputField label="Starts At" required>
+            <InputField label="Start Date & Time" required>
               <input type="datetime-local" value={form.startsAt} onChange={(e) => set('startsAt', e.target.value)} className={inputCls} />
             </InputField>
-            <InputField label="Ends At" required error={errors.endsAt}>
+            <InputField label="End Date & Time" required error={errors.endsAt}>
               <input type="datetime-local" value={form.endsAt} onChange={(e) => set('endsAt', e.target.value)} className={inputCls} />
             </InputField>
           </div>
+
+          {/* Shop URL */}
+          <InputField label="Shop URL">
+            <input type="text" value={form.shopUrl} onChange={(e) => set('shopUrl', e.target.value)} placeholder="yourstore.myshopify.com" className={inputCls} />
+          </InputField>
 
           {/* Awarded / Winners */}
           <div className="grid grid-cols-2 gap-3">
@@ -594,17 +650,104 @@ export default function CampaignBuilder() {
               <input type="number" min="1" value={form.numberOfWinners} onChange={(e) => set('numberOfWinners', parseInt(e.target.value) || 1)} className={inputCls} />
             </InputField>
           </div>
-
-          {/* Timezone */}
-          <InputField label="Timezone">
-            <select value={form.timezone} onChange={(e) => set('timezone', e.target.value)} className={inputCls}>
-              {TIMEZONES.map((tz) => <option key={tz} value={tz}>{tz}</option>)}
-            </select>
-          </InputField>
         </div>
       </div>
 
-      {/* Who's running */}
+      {/* ── Direct URL ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-2">Direct URL</h3>
+        {activeCampaign?.id ? (
+          <div className="flex items-center gap-2">
+            <input readOnly value={`${window.location.origin}/g/${activeCampaign.id}`} className={inputCls + ' text-brand-green bg-dark-700/50 cursor-text'} />
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(`${window.location.origin}/g/${activeCampaign.id}`)}
+              className="shrink-0 px-3 py-2 border border-dark-500 rounded-lg text-dark-300 hover:text-white hover:border-dark-400 transition-colors"
+            >
+              <Copy size={14} />
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-red-400 flex items-center gap-1.5">
+            <AlertCircle size={13} /> Please save the giveaway to generate your Direct URL.
+          </p>
+        )}
+      </div>
+
+      {/* ── Embedding Code ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-2">Embedding Code</h3>
+        {activeCampaign?.id ? (
+          <div className="space-y-2">
+            <textarea
+              readOnly
+              rows={3}
+              value={`<script src="${window.location.origin}/embed.js" data-giveaway="${activeCampaign.id}"></script>`}
+              className={inputCls + ' font-mono text-xs text-brand-green bg-dark-700/50 cursor-text resize-none'}
+            />
+            <button
+              type="button"
+              onClick={() => navigator.clipboard.writeText(`<script src="${window.location.origin}/embed.js" data-giveaway="${activeCampaign.id}"></script>`)}
+              className="flex items-center gap-1.5 text-xs px-3 py-1.5 border border-dark-500 rounded-lg text-dark-300 hover:text-white hover:border-dark-400 transition-colors"
+            >
+              <Copy size={12} /> Copy Code
+            </button>
+          </div>
+        ) : (
+          <p className="text-xs text-red-400 flex items-center gap-1.5">
+            <AlertCircle size={13} /> Please save the giveaway to get the embedding code.
+          </p>
+        )}
+      </div>
+
+      {/* ── Notifications ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Notifications</h3>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-white">Notify me via e-mail when users upload content (images)</p>
+          <Toggle checked={form.notifyOnImageUpload} onChange={() => set('notifyOnImageUpload', !form.notifyOnImageUpload)} />
+        </div>
+      </div>
+
+      {/* ── E-mail Validation ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">E-mail Validation</h3>
+        <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3 mb-2">
+          <p className="text-xs text-blue-300 leading-relaxed">
+            E-mails will be validated at signup using an external e-mail validation service. Please note: due to the complexity of the validation process, some valid email addresses might be rejected. In such cases, you can whitelist them from the <strong>Users &gt; Email Validation</strong> menu, and notify users they can try again.
+          </p>
+        </div>
+        <p className="text-xs text-dark-500 text-right">Powered by <span className="text-white font-semibold">EmailListVerify</span></p>
+      </div>
+
+      {/* ── E-mail Confirmation & PIN ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">E-mail Confirmation &amp; PIN</h3>
+        <div className="space-y-3">
+          <InputField label="Your Logo">
+            <label className="flex items-center gap-2 border border-dark-500 rounded-lg px-3 py-2 cursor-pointer hover:border-brand-green/50 w-fit bg-dark-700 transition-colors">
+              <Upload size={13} className="text-dark-400" />
+              <span className="text-xs text-dark-200 font-medium">UPLOAD</span>
+              <input type="file" accept="image/*" className="hidden" />
+            </label>
+          </InputField>
+          <InputField label="Your e-mail address">
+            <input type="email" value={form.emailConfirmAddress} onChange={(e) => set('emailConfirmAddress', e.target.value)} placeholder="your@email.com" className={inputCls} />
+          </InputField>
+          <InputField label="Your display name">
+            <input type="text" value={form.emailConfirmDisplayName} onChange={(e) => set('emailConfirmDisplayName', e.target.value)} placeholder="add a name" className={inputCls} />
+          </InputField>
+          <div>
+            <label className="block text-xs text-dark-400 mb-1.5">Confirm E-mail</label>
+            <div className="flex items-center gap-2 px-3 py-2 bg-dark-700/50 border border-dark-600 rounded-lg">
+              <Lock size={13} className="text-amber-400 shrink-0" />
+              <span className="text-xs text-amber-400">Available paid plans, upgrade now!</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Who's running ── */}
       <div>
         <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Who's Running This Giveaway?</h3>
         <div className="grid grid-cols-2 gap-3">
@@ -617,7 +760,7 @@ export default function CampaignBuilder() {
         </div>
       </div>
 
-      {/* Shopify Product Picker */}
+      {/* ── Shopify Product Picker ── */}
       <div>
         <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Import Prize from Shopify</h3>
         <div className="border border-dark-600 rounded-xl p-4 bg-dark-700/30">
@@ -659,7 +802,7 @@ export default function CampaignBuilder() {
         </div>
       </div>
 
-      {/* Prize details */}
+      {/* ── Prize details ── */}
       <div>
         <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">What Are You Giving Away?</h3>
         <div className="space-y-3">
@@ -674,8 +817,6 @@ export default function CampaignBuilder() {
               </div>
             </InputField>
           </div>
-
-          {/* Prize image */}
           <InputField label="Prize Image">
             <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-dark-500 rounded-xl py-5 cursor-pointer hover:border-brand-green/50 transition-colors bg-dark-700">
               <Upload size={18} className="text-dark-400" />
@@ -695,7 +836,7 @@ export default function CampaignBuilder() {
         </div>
       </div>
 
-      {/* Contestants Must Provide */}
+      {/* ── Contestants Must Provide ── */}
       <div>
         <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Contestants Must Provide</h3>
         <div className="flex items-center gap-5">
@@ -717,9 +858,9 @@ export default function CampaignBuilder() {
         </div>
       </div>
 
-      {/* Rules and Terms */}
+      {/* ── Terms, Privacy Policy & GDPR ── */}
       <div>
-        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Rules and Terms</h3>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Terms, Privacy Policy &amp; GDPR</h3>
         <div className="space-y-3">
           <div className="flex flex-wrap gap-2 mb-1">
             {[
@@ -748,14 +889,13 @@ export default function CampaignBuilder() {
               </button>
             )}
           </div>
-
-          <InputField label="Giveaway Rules">
+          <InputField label="Terms & Rules">
             <div className="space-y-1.5">
               <textarea
                 value={form.rulesText}
                 onChange={(e) => set('rulesText', e.target.value)}
                 rows={6}
-                placeholder={`Example:\n1. Open to residents of [Country] aged 18+.\n2. One entry per person.\n3. Winner will be selected randomly and notified by email.`}
+                placeholder="No Purchase Necessary"
                 className={inputCls + ' resize-none'}
               />
               <button
@@ -769,7 +909,6 @@ export default function CampaignBuilder() {
               </button>
             </div>
           </InputField>
-
           <div className="grid grid-cols-2 gap-3">
             <InputField label="Eligibility">
               <input type="text" value={form.eligibility} onChange={(e) => set('eligibility', e.target.value)} placeholder="e.g. US residents, 18+" className={inputCls} />
@@ -778,7 +917,6 @@ export default function CampaignBuilder() {
               <input type="text" value={form.termsUrl} onChange={(e) => set('termsUrl', e.target.value)} placeholder="https://yoursite.com/terms" className={inputCls} />
             </InputField>
           </div>
-
           {form.rulesText && (
             <p className="text-xs text-dark-500 text-right">
               {form.rulesText.length} characters · {form.rulesText.split('\n').filter(Boolean).length} rules
@@ -787,19 +925,92 @@ export default function CampaignBuilder() {
         </div>
       </div>
 
-      {/* reCAPTCHA */}
+      {/* ── Bot Protection ── */}
       <div>
-        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Invisible reCAPTCHA</h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-white">Enable invisible reCAPTCHA</p>
-            <p className="text-xs text-dark-400 mt-0.5">Reduces spam signups by bot mitigation technology.</p>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+          <Shield size={13} /> Bot Protection
+        </h3>
+        <div className="space-y-4">
+
+          {/* IP rate limit */}
+          <div className="flex items-center gap-2 flex-wrap text-sm text-white">
+            <span>Allow max</span>
+            <input
+              type="number" min="0" max="100"
+              value={form.ipMaxSignups}
+              onChange={(e) => set('ipMaxSignups', parseInt(e.target.value) || 0)}
+              className="w-14 bg-dark-700 border border-dark-500 rounded-lg px-2 py-1.5 text-center text-sm text-white focus:outline-none focus:border-brand-green"
+            />
+            <span>sign-ups from the same IP within</span>
+            <input
+              type="number" min="0" max="1440"
+              value={form.ipTimeWindow}
+              onChange={(e) => set('ipTimeWindow', parseInt(e.target.value) || 0)}
+              className="w-16 bg-dark-700 border border-dark-500 rounded-lg px-2 py-1.5 text-center text-sm text-white focus:outline-none focus:border-brand-green"
+            />
+            <span>minutes</span>
+            <span className="text-xs text-dark-400">(0 = disabled)</span>
           </div>
-          <Toggle checked={form.recaptcha} onChange={() => set('recaptcha', !form.recaptcha)} />
+
+          {/* Class B subnet rate limit */}
+          <div className="flex items-center gap-2 flex-wrap text-sm text-white">
+            <span>Allow max</span>
+            <input
+              type="number" min="0" max="100"
+              value={form.subnetMaxSignups}
+              onChange={(e) => set('subnetMaxSignups', parseInt(e.target.value) || 0)}
+              className="w-14 bg-dark-700 border border-dark-500 rounded-lg px-2 py-1.5 text-center text-sm text-white focus:outline-none focus:border-brand-green"
+            />
+            <span>sign-ups from the same <strong>Class B Subnet</strong></span>
+            <span className="text-xs text-dark-400">(255.255.x.x)</span>
+            <span>within</span>
+            <input
+              type="number" min="0" max="1440"
+              value={form.subnetTimeWindow}
+              onChange={(e) => set('subnetTimeWindow', parseInt(e.target.value) || 0)}
+              className="w-16 bg-dark-700 border border-dark-500 rounded-lg px-2 py-1.5 text-center text-sm text-white focus:outline-none focus:border-brand-green"
+            />
+            <span>minutes</span>
+            <span className="text-xs text-dark-400">(0 = disabled)</span>
+          </div>
+
+          {/* VPN block */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-white">Block sign-ups from VPN and Servers</p>
+            <Toggle checked={form.blockVpn} onChange={() => set('blockVpn', !form.blockVpn)} />
+          </div>
+
+          {/* Referral disqualification */}
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-white">Reject sign-ups if referral user is disqualified</p>
+            <Toggle checked={form.rejectDisqualifiedReferral} onChange={() => set('rejectDisqualifiedReferral', !form.rejectDisqualifiedReferral)} />
+          </div>
+
+          {/* reCAPTCHA */}
+          <div className="pt-3 border-t border-dark-700 space-y-2">
+            <h4 className="text-xs font-semibold text-dark-400 uppercase tracking-wider">reCAPTCHA</h4>
+            <p className="text-xs text-dark-400 leading-relaxed">
+              reCAPTCHA helps to prevent spam, fake and fraud signups: get your reCAPTCHA keys{' '}
+              <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">here</a>.
+            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-white">Enable Invisible reCAPTCHA</p>
+              <Toggle checked={form.recaptcha} onChange={() => set('recaptcha', !form.recaptcha)} />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Marketing Consent */}
+      {/* ── Tracking Scripts (locked) ── */}
+      <div>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-2">Tracking Scripts</h3>
+        <div className="flex items-center gap-2 px-3 py-3 bg-dark-700/50 border border-dark-600 rounded-lg">
+          <Lock size={13} className="text-amber-400 shrink-0" />
+          <span className="text-xs text-amber-400">Available on Pro, Premium and Ultimate Plans, upgrade now!</span>
+        </div>
+      </div>
+
+      {/* ── Marketing Consent ── */}
       <div>
         <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-3">Marketing Consent</h3>
         <div className="flex items-center justify-between">

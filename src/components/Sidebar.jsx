@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Plus, Users, Trophy, Eye, Settings, Gift,
   BarChart2, Shield, Share2, Code, Megaphone, Mail, X, LogOut,
-  Plug, ClipboardList, Upload, Globe, ChevronDown, ChevronUp, Wrench, HelpCircle,
+  Plug, ClipboardList, Upload, Globe, ChevronDown, ChevronUp, Wrench, HelpCircle, BookOpen,
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
@@ -38,7 +38,8 @@ const MAIN_SECTIONS = [
       { to: '/embed',         icon: Code,   label: 'Embed & Share' },
       { to: '/preview',       icon: Eye,    label: 'Landing Page' },
       { to: '/import',        icon: Upload, label: 'Import Data' },
-      { to: '/custom-domain', icon: Globe,  label: 'Custom Domain' },
+      { to: '/custom-domain', icon: Globe,     label: 'Custom Domain' },
+      { to: '/overview',      icon: BookOpen,  label: 'Project Overview' },
     ],
   },
 ]

@@ -31,6 +31,7 @@ import MyAccount from './pages/MyAccount'
 import ApiLogs from './pages/ApiLogs'
 import ImportPage from './pages/ImportPage'
 import CustomDomain from './pages/CustomDomain'
+import ProjectOverview from './pages/ProjectOverview'
 
 function AppShell({ session }) {
   if (!session) return <AuthPage />
@@ -62,6 +63,7 @@ function AppShell({ session }) {
         <Route path="logs/notifications"        element={<ApiLogs type="notifications" />} />
         <Route path="import"                    element={<ImportPage />} />
         <Route path="custom-domain"             element={<CustomDomain />} />
+        <Route path="overview"                  element={<ProjectOverview />} />
       </Route>
     </Routes>
   )
