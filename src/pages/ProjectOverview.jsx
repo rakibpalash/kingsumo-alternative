@@ -4,6 +4,8 @@ import {
   Code2, Layers, ChevronDown, ChevronUp,
   Globe, Key, Upload, Cpu, Database, Star, Repeat2, Languages,
   MessageCircle, ShoppingCart, Camera,
+  Mail, Bell, Palette, FlaskConical, Building2, Smartphone,
+  QrCode, Sparkles, GitBranch, RefreshCw, Lock, CheckCircle2, Clock, Lightbulb,
 } from 'lucide-react'
 
 // ── Translations ──────────────────────────────────────────────────────────────
@@ -38,6 +40,18 @@ const T = {
     problem: 'The Problem',
     solution: 'The Solution',
     result: 'The Result',
+    roadmapTitle: 'Roadmap — Upcoming & Suggested Features',
+    roadmapSub: 'What can be built next, categorized by effort and impact',
+    canBuildNow: 'Can Build Now',
+    canBuildNowSub: 'Easy wins — fully implementable within the current tech stack',
+    mediumEffort: 'Medium Effort',
+    mediumEffortSub: 'Requires new integrations or moderate UI work',
+    futureVision: 'Future Vision',
+    futureVisionSub: 'Bigger features requiring new infrastructure or platforms',
+    mySuggestions: 'My Top Suggestions',
+    mySuggestionsSub: 'High-impact features I recommend prioritizing based on market demand',
+    effort: 'Effort',
+    impact: 'Impact',
   },
   bn: {
     badge: 'কিংসুমো বিকল্প',
@@ -68,6 +82,18 @@ const T = {
     problem: 'সমস্যা',
     solution: 'সমাধান',
     result: 'ফলাফল',
+    roadmapTitle: 'রোডম্যাপ — আসন্ন ও প্রস্তাবিত ফিচারসমূহ',
+    roadmapSub: 'পরবর্তীতে কী তৈরি করা যাবে, প্রচেষ্টা ও প্রভাব অনুযায়ী বিভাজিত',
+    canBuildNow: 'এখনই তৈরি করা যাবে',
+    canBuildNowSub: 'সহজ — বর্তমান টেক স্ট্যাকেই সম্পূর্ণ বাস্তবায়নযোগ্য',
+    mediumEffort: 'মাঝারি প্রচেষ্টা',
+    mediumEffortSub: 'নতুন ইন্টিগ্রেশন বা মাঝারি UI কাজ প্রয়োজন',
+    futureVision: 'ভবিষ্যৎ পরিকল্পনা',
+    futureVisionSub: 'বড় ফিচার যার জন্য নতুন অবকাঠামো প্রয়োজন',
+    mySuggestions: 'আমার শীর্ষ পরামর্শ',
+    mySuggestionsSub: 'বাজারের চাহিদা অনুযায়ী যেগুলো আমি অগ্রাধিকার দেওয়ার সুপারিশ করি',
+    effort: 'প্রচেষ্টা',
+    impact: 'প্রভাব',
   },
 }
 
@@ -212,6 +238,193 @@ const TECH_STACK = [
   { name: 'Lucide React', role: 'Icon library', rolebn: 'আইকন লাইব্রেরি', icon: '✨' },
   { name: 'Vercel', role: 'Hosting / deployment', rolebn: 'হোস্টিং / ডেপ্লয়', icon: '▲' },
 ]
+
+// ── Roadmap Data ─────────────────────────────────────────────────────────────
+
+const ROADMAP = {
+  canBuildNow: [
+    {
+      icon: <Mail size={16} />,
+      color: 'text-brand-green',
+      title: 'Automated Winner Email',
+      titlebn: 'স্বয়ংক্রিয় বিজয়ী ইমেইল',
+      desc: 'Auto-send a congratulations email to the winner with a claim link, and a consolation discount email to all non-winners. Currently winner notification is manual.',
+      descbn: 'বিজয়ীকে স্বয়ংক্রিয়ভাবে ক্লেইম লিঙ্কসহ অভিনন্দন ইমেইল পাঠানো এবং বাকিদের সান্ত্বনা ডিসকাউন্ট ইমেইল পাঠানো।',
+      effort: 'Low', impact: 'High',
+    },
+    {
+      icon: <QrCode size={16} />,
+      color: 'text-cyan-400',
+      title: 'QR Code Generator',
+      titlebn: 'QR কোড জেনারেটর',
+      desc: 'Generate a QR code for the giveaway URL. Print on flyers, packaging inserts, or event banners to drive offline traffic to the giveaway.',
+      descbn: 'গিভঅ্যাওয়ে URL-এর জন্য QR কোড তৈরি করুন। ফ্লায়ার, প্যাকেজিং বা ইভেন্ট ব্যানারে প্রিন্ট করুন।',
+      effort: 'Low', impact: 'Medium',
+    },
+    {
+      icon: <Bell size={16} />,
+      color: 'text-yellow-400',
+      title: 'Social Proof Notifications',
+      titlebn: 'সোশ্যাল প্রুফ নোটিফিকেশন',
+      desc: '"Sarah from New York just entered!" popup notifications on the giveaway page. Proven to increase conversion rate by 15–25%. Uses existing entry data — no new backend needed.',
+      descbn: '"নিউ ইয়র্কের সারা এইমাত্র অংশ নিয়েছেন!" পপআপ নোটিফিকেশন। কনভার্সন রেট ১৫-২৫% বাড়ায়।',
+      effort: 'Low', impact: 'High',
+    },
+    {
+      icon: <FlaskConical size={16} />,
+      color: 'text-purple-400',
+      title: 'A/B Testing for Campaign Copy',
+      titlebn: 'ক্যাম্পেইন কপির A/B টেস্টিং',
+      desc: 'Test two different headlines or descriptions. Split traffic 50/50 and show which version gets more entries. The state management already has abTestEnabled in the form.',
+      descbn: 'দুটি ভিন্ন শিরোনাম বা বিবরণ পরীক্ষা করুন। ট্র্যাফিক ৫০/৫০ ভাগ করুন এবং কোনটি বেশি এন্ট্রি পায় দেখুন।',
+      effort: 'Low', impact: 'Medium',
+    },
+    {
+      icon: <RefreshCw size={16} />,
+      color: 'text-teal-400',
+      title: 'Campaign Duplication & Templates',
+      titlebn: 'ক্যাম্পেইন ডুপ্লিকেশন ও টেমপ্লেট',
+      desc: 'One-click duplicate any campaign as a starting template. Also add a library of 10+ pre-built niche templates (e-commerce, SaaS, creator, local business).',
+      descbn: 'এক ক্লিকে যেকোনো ক্যাম্পেইন ডুপ্লিকেট করুন। ১০+ প্রি-বিল্ট নিশ টেমপ্লেট লাইব্রেরি যোগ করুন।',
+      effort: 'Low', impact: 'High',
+    },
+    {
+      icon: <GitBranch size={16} />,
+      color: 'text-indigo-400',
+      title: 'Supabase Edge Functions for Email APIs',
+      titlebn: 'ইমেইল API-এর জন্য Supabase Edge Functions',
+      desc: 'Move CORS-blocked integrations (Mailchimp REST API, Klaviyo private key subscribe) to Supabase Edge Functions. Currently these only work via JSONP workarounds.',
+      descbn: 'CORS-ব্লকড ইন্টিগ্রেশন (Mailchimp REST, Klaviyo private) Supabase Edge Functions-এ সরান।',
+      effort: 'Low', impact: 'High',
+    },
+  ],
+  mediumEffort: [
+    {
+      icon: <Palette size={16} />,
+      color: 'text-pink-400',
+      title: 'Visual Theme Builder',
+      titlebn: 'ভিজ্যুয়াল থিম বিল্ডার',
+      desc: 'Live color picker, font selector, background image upload for the public giveaway page. Brand colors, logo placement, and custom CSS — all visual, no code.',
+      descbn: 'পাবলিক গিভঅ্যাওয়ে পেজের জন্য লাইভ কালার পিকার, ফন্ট সিলেক্টর, ব্যাকগ্রাউন্ড ইমেজ আপলোড।',
+      effort: 'Medium', impact: 'High',
+    },
+    {
+      icon: <Camera size={16} />,
+      color: 'text-orange-400',
+      title: 'Photo / Video Contest Mode',
+      titlebn: 'ফটো/ভিডিও কনটেস্ট মোড',
+      desc: 'Entrants submit a photo or short video. Public gallery displays all submissions. Voting system lets the audience vote for their favorite. Winner = most votes OR random from top 10.',
+      descbn: 'অংশগ্রহণকারীরা ছবি বা শর্ট ভিডিও জমা দেন। পাবলিক গ্যালারি প্রদর্শন করে। ভোটিং সিস্টেম।',
+      effort: 'Medium', impact: 'High',
+    },
+    {
+      icon: <Sparkles size={16} />,
+      color: 'text-violet-400',
+      title: 'Instant Win / Scratch Card',
+      titlebn: 'ইনস্ট্যান্ট উইন / স্ক্র্যাচ কার্ড',
+      desc: 'Some entrants win instantly after signing up — scratch card UI reveals if they won. A percentage of entries are pre-marked as instant winners. Creates addictive engagement.',
+      descbn: 'কিছু অংশগ্রহণকারী সাইনআপের পরেই জিতে যান। স্ক্র্যাচ কার্ড UI দেখায় তারা জিতেছে কিনা।',
+      effort: 'Medium', impact: 'High',
+    },
+    {
+      icon: <Building2 size={16} />,
+      color: 'text-blue-400',
+      title: 'Team Collaboration & Roles',
+      titlebn: 'টিম কোলাবরেশন ও রোলস',
+      desc: 'Invite team members with role-based access: Admin (full access), Manager (edit campaigns), Viewer (read-only analytics). Essential for agencies managing multiple client accounts.',
+      descbn: 'রোল-ভিত্তিক অ্যাক্সেস সহ টিম মেম্বার আমন্ত্রণ করুন: অ্যাডমিন, ম্যানেজার, ভিউয়ার।',
+      effort: 'Medium', impact: 'High',
+    },
+    {
+      icon: <BarChart2 size={16} />,
+      color: 'text-teal-400',
+      title: 'Advanced Analytics Dashboard',
+      titlebn: 'অ্যাডভান্সড অ্যানালিটিক্স ড্যাশবোর্ড',
+      desc: 'Conversion funnel (views → entries → shares → referrals), cohort analysis, email engagement scoring, cost-per-lead calculator, campaign comparison charts.',
+      descbn: 'কনভার্সন ফানেল, কোহর্ট বিশ্লেষণ, ইমেইল এনগেজমেন্ট স্কোরিং, লিড-প্রতি-খরচ ক্যালকুলেটর।',
+      effort: 'Medium', impact: 'High',
+    },
+    {
+      icon: <Lock size={16} />,
+      color: 'text-amber-400',
+      title: 'GDPR Compliance Dashboard',
+      titlebn: 'GDPR কমপ্লায়েন্স ড্যাশবোর্ড',
+      desc: 'Data export requests (DSAR), right to be forgotten (delete entry by email), consent log viewer, cookie consent banner. Required for EU market.',
+      descbn: 'ডেটা এক্সপোর্ট রিকোয়েস্ট, ভুলে যাওয়ার অধিকার (ইমেইল দিয়ে এন্ট্রি মুছুন), কনসেন্ট লগ।',
+      effort: 'Medium', impact: 'Medium',
+    },
+  ],
+  futureVision: [
+    {
+      icon: <Smartphone size={16} />,
+      color: 'text-green-400',
+      title: 'Mobile App (iOS & Android)',
+      titlebn: 'মোবাইল অ্যাপ (iOS ও Android)',
+      desc: 'Manage campaigns, view live analytics, and pick winners from your phone. Push notifications for milestone alerts ("You just hit 1,000 entries!"). Built with React Native.',
+      descbn: 'ফোন থেকে ক্যাম্পেইন ম্যানেজ করুন, লাইভ অ্যানালিটিক্স দেখুন এবং বিজয়ী নির্বাচন করুন।',
+      effort: 'High', impact: 'High',
+    },
+    {
+      icon: <Building2 size={16} />,
+      color: 'text-blue-400',
+      title: 'Shopify App Store Listing',
+      titlebn: 'শপিফাই অ্যাপ স্টোর লিস্টিং',
+      desc: 'Proper Shopify embedded app using App Bridge. Install directly from Shopify App Store with one click. Auto-authenticates with store credentials. Massive distribution channel.',
+      descbn: 'App Bridge ব্যবহার করে শপিফাই এমবেডেড অ্যাপ। শপিফাই অ্যাপ স্টোর থেকে সরাসরি ইনস্টল।',
+      effort: 'High', impact: 'Very High',
+    },
+    {
+      icon: <Cpu size={16} />,
+      color: 'text-violet-400',
+      title: 'AI Campaign Optimizer',
+      titlebn: 'AI ক্যাম্পেইন অপ্টিমাইজার',
+      desc: 'AI analyzes your campaign performance mid-run and suggests: "Increase referral bonus entries — your referral rate is 4x higher than email entries." Auto-adjusts entry weights.',
+      descbn: 'AI মাঝ-চলাকালীন পারফরম্যান্স বিশ্লেষণ করে পরামর্শ দেয়: "রেফারেল বোনাস বাড়ান।"',
+      effort: 'High', impact: 'Very High',
+    },
+    {
+      icon: <Globe size={16} />,
+      color: 'text-cyan-400',
+      title: 'Multi-Language Giveaway Pages',
+      titlebn: 'মাল্টি-ল্যাঙ্গুয়েজ গিভঅ্যাওয়ে পেজ',
+      desc: 'Public giveaway pages auto-detect browser language and show content in the visitor\'s language. Support 10+ languages. Translation management UI in the dashboard.',
+      descbn: 'পাবলিক গিভঅ্যাওয়ে পেজ ব্রাউজার ভাষা স্বয়ংক্রিয়ভাবে সনাক্ত করে। ১০+ ভাষা সমর্থন।',
+      effort: 'High', impact: 'High',
+    },
+  ],
+  mySuggestions: [
+    {
+      icon: <Mail size={16} />,
+      color: 'text-brand-green',
+      rank: '#1',
+      title: 'Automated Email Sequences',
+      titlebn: 'স্বয়ংক্রিয় ইমেইল সিকোয়েন্স',
+      why: 'Biggest gap vs KingSumo. KingSumo\'s email automation is their #1 selling point — "smart auto-emails backed by 100,000+ data points." Without this, you\'re just a lead collector, not a lead nurturer.',
+      whybn: 'KingSumo-এর বিরুদ্ধে সবচেয়ে বড় ঘাটতি। KingSumo-এর ইমেইল অটোমেশন তাদের #১ বিক্রয় পয়েন্ট। এটা ছাড়া শুধু লিড কালেক্টর, নার্চারার নয়।',
+      sequences: ['Entry confirmation email (instant)', 'Day 3 reminder "Don\'t miss out — 4 days left"', 'Day 7 final reminder "Last chance!"', 'Winner announcement to all entrants', 'Consolation email with discount code to non-winners'],
+    },
+    {
+      icon: <Sparkles size={16} />,
+      color: 'text-yellow-400',
+      rank: '#2',
+      title: 'Instant Win Mechanic',
+      titlebn: 'ইনস্ট্যান্ট উইন মেকানিক',
+      why: 'Solves the biggest giveaway problem: people enter once and forget. Instant win keeps users coming back daily. "Spin daily for an extra chance to win instantly." 3–5x higher engagement.',
+      whybn: 'গিভঅ্যাওয়ের সবচেয়ে বড় সমস্যা সমাধান করে: মানুষ একবার এন্ট্রি করে ভুলে যায়। ইনস্ট্যান্ট উইন ৩-৫x বেশি এনগেজমেন্ট তৈরি করে।',
+      sequences: ['Daily spin wheel for instant win chance', 'Scratch card UI on entry confirmation', 'Configurable win % (e.g., 1 in 50 wins a small prize)', 'Big prize still drawn randomly at end'],
+    },
+    {
+      icon: <Building2 size={16} />,
+      color: 'text-blue-400',
+      rank: '#3',
+      title: 'Agency / White-Label Mode',
+      titlebn: 'এজেন্সি / হোয়াইট-লেবেল মোড',
+      why: 'The highest-LTV customer segment. One agency = 5–50 clients paying monthly. White-label removes all GiveShop branding. Client management dashboard lets agencies bill clients separately.',
+      whybn: 'সর্বোচ্চ LTV কাস্টমার সেগমেন্ট। একটি এজেন্সি = ৫-৫০ ক্লায়েন্ট। হোয়াইট-লেবেল সব GiveShop ব্র্যান্ডিং সরায়।',
+      sequences: ['Custom logo + colors on all pages', 'Client sub-accounts with usage limits', 'Agency billing dashboard', 'Custom domain per client (win.client.com)', 'Reseller pricing tiers'],
+    },
+  ],
+}
 
 // ── Real-World Use Cases ───────────────────────────────────────────────────────
 
@@ -377,6 +590,105 @@ function RealWorldCard({ item, isBangla }) {
   )
 }
 
+// ── Roadmap Components ────────────────────────────────────────────────────────
+
+const effortColor = { Low: 'text-brand-green bg-brand-green/10', Medium: 'text-amber-400 bg-amber-400/10', High: 'text-red-400 bg-red-400/10' }
+const impactColor = { High: 'text-purple-400 bg-purple-400/10', 'Very High': 'text-blue-400 bg-blue-400/10', Medium: 'text-dark-300 bg-dark-700' }
+
+function RoadmapCard({ item, isBangla }) {
+  return (
+    <div className="rounded-xl bg-dark-800 border border-dark-700 p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <div className={`shrink-0 w-8 h-8 rounded-lg bg-dark-700 flex items-center justify-center ${item.color}`}>
+          {item.icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-dark-100">{isBangla ? item.titlebn : item.title}</p>
+          <p className="text-xs text-dark-400 mt-1 leading-relaxed">{isBangla ? item.descbn : item.desc}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${effortColor[item.effort] || 'text-dark-400 bg-dark-700'}`}>
+          {isBangla ? 'প্রচেষ্টা' : 'Effort'}: {item.effort}
+        </span>
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${impactColor[item.impact] || 'text-dark-400 bg-dark-700'}`}>
+          {isBangla ? 'প্রভাব' : 'Impact'}: {item.impact}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function SuggestionCard({ item, isBangla }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="rounded-xl bg-dark-800 border border-dark-700 overflow-hidden">
+      <button className="w-full flex items-start gap-3 p-5 text-left hover:bg-dark-700/40 transition-colors" onClick={() => setOpen(v => !v)}>
+        <div className={`shrink-0 w-8 h-8 rounded-lg bg-dark-700 flex items-center justify-center ${item.color}`}>{item.icon}</div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-brand-green bg-brand-green/10 px-2 py-0.5 rounded-full">{item.rank}</span>
+            <span className="text-sm font-semibold text-dark-100">{isBangla ? item.titlebn : item.title}</span>
+          </div>
+          <p className="text-xs text-dark-400 mt-1 leading-relaxed">{isBangla ? item.whybn : item.why}</p>
+        </div>
+        <div className="shrink-0 text-dark-500">{open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+      </button>
+      {open && (
+        <div className="border-t border-dark-700 px-5 py-4">
+          <p className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-2">{isBangla ? 'বাস্তবায়ন তালিকা' : 'Implementation Checklist'}</p>
+          <ul className="space-y-1.5">
+            {item.sequences.map((s, i) => (
+              <li key={i} className="flex items-start gap-2 text-sm text-dark-300">
+                <CheckCircle2 size={13} className={`shrink-0 mt-0.5 ${item.color}`} />
+                {s}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function RoadmapSection({ isBangla }) {
+  const t = isBangla ? T.bn : T.en
+  const sections = [
+    { key: 'canBuildNow',  label: t.canBuildNow,   sub: t.canBuildNowSub,   icon: <CheckCircle2 size={16} />, color: 'text-brand-green', border: 'border-brand-green/30', data: ROADMAP.canBuildNow },
+    { key: 'mediumEffort', label: t.mediumEffort,  sub: t.mediumEffortSub,  icon: <Clock size={16} />,        color: 'text-amber-400',   border: 'border-amber-400/30',   data: ROADMAP.mediumEffort },
+    { key: 'futureVision', label: t.futureVision,  sub: t.futureVisionSub,  icon: <Lightbulb size={16} />,   color: 'text-purple-400',  border: 'border-purple-400/30',  data: ROADMAP.futureVision },
+  ]
+  return (
+    <div className="space-y-8">
+      {/* Category sections */}
+      {sections.map(sec => (
+        <div key={sec.key}>
+          <div className={`flex items-center gap-2 mb-1 ${sec.color}`}>
+            {sec.icon}
+            <h3 className="text-base font-semibold">{sec.label}</h3>
+          </div>
+          <p className="text-xs text-dark-400 mb-4">{sec.sub}</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {sec.data.map((item, i) => <RoadmapCard key={i} item={item} isBangla={isBangla} />)}
+          </div>
+        </div>
+      ))}
+
+      {/* My Suggestions */}
+      <div>
+        <div className="flex items-center gap-2 mb-1 text-brand-green">
+          <Star size={16} />
+          <h3 className="text-base font-semibold">{t.mySuggestions}</h3>
+        </div>
+        <p className="text-xs text-dark-400 mb-4">{t.mySuggestionsSub}</p>
+        <div className="space-y-3">
+          {ROADMAP.mySuggestions.map((item, i) => <SuggestionCard key={i} item={item} isBangla={isBangla} />)}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function ProjectOverview() {
@@ -421,6 +733,16 @@ export default function ProjectOverview() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* ── Roadmap ── */}
+      <div>
+        <h2 className="text-lg font-semibold text-dark-100 mb-1 flex items-center gap-2">
+          <Lightbulb size={18} className="text-brand-green" />
+          {t.roadmapTitle}
+        </h2>
+        <p className="text-sm text-dark-400 mb-6">{t.roadmapSub}</p>
+        <RoadmapSection isBangla={isBangla} />
       </div>
 
       {/* ── Real-World Community Examples ── */}
