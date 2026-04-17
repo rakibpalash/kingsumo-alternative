@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Mail, Upload, Lock, Plus, ChevronUp, ChevronDown,
   Shield, Zap, PlugZap, FileText, MapPin, UserCheck, Share2, FlaskConical, Sliders, Trash2, Sparkles, Loader2, X, Gift,
-  Palette, Settings2, Globe, AlertTriangle, ExternalLink, Save, Search, Copy, AlertCircle,
+  Palette, Settings2, Globe, AlertTriangle, ExternalLink, Save, Search, Copy, AlertCircle, Code2,
 } from 'lucide-react'
 import { generateTitle, generateDescription, generateRules } from '../lib/groq'
 import { fetchShopifyProducts } from '../lib/shopify'
@@ -241,7 +241,7 @@ const Toggle = ({ checked, onChange }) => (
 
 export default function CampaignBuilder() {
   const navigate = useNavigate()
-  const { createCampaign, publishCampaign, activeCampaign } = useStore()
+  const { createCampaign, publishCampaign, activeCampaign, saveTrackingPixels } = useStore()
 
   const now = new Date()
   const pad = (n) => String(n).padStart(2, '0')
@@ -278,6 +278,12 @@ export default function CampaignBuilder() {
     // Email confirmation
     emailConfirmAddress: '',
     emailConfirmDisplayName: '',
+    // Tracking scripts
+    fbPixelId: '',
+    gaId: '',
+    gtmId: '',
+    customHeadScript: '',
+    customBodyScript: '',
     // Shop & bot protection
     shopUrl: '',
     ipMaxSignups: 2,
@@ -1001,12 +1007,158 @@ export default function CampaignBuilder() {
         </div>
       </div>
 
-      {/* ── Tracking Scripts (locked) ── */}
+      {/* ── Tracking Scripts ── */}
       <div>
-        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-2">Tracking Scripts</h3>
-        <div className="flex items-center gap-2 px-3 py-3 bg-dark-700/50 border border-dark-600 rounded-lg">
-          <Lock size={13} className="text-amber-400 shrink-0" />
-          <span className="text-xs text-amber-400">Available on Pro, Premium and Ultimate Plans, upgrade now!</span>
+        <h3 className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-1">Tracking Scripts</h3>
+        <p className="text-xs text-dark-500 mb-4">Fire tracking events on every new entry. Paste your IDs below — scripts inject automatically.</p>
+
+        <div className="space-y-3">
+
+          {/* Facebook Pixel */}
+          <div className="rounded-xl border border-dark-600 bg-dark-700/30 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-dark-600/60">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#1877f2' }}>
+                <span className="text-white text-xs font-black">f</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">Facebook Pixel</p>
+                <p className="text-xs text-dark-400">Tracks "Lead" event on each entry</p>
+              </div>
+              {form.fbPixelId && (
+                <span className="text-[10px] text-brand-green border border-brand-green/30 bg-brand-green/10 px-2 py-0.5 rounded-full shrink-0">Active</span>
+              )}
+            </div>
+            <div className="px-4 py-3 space-y-2">
+              <InputField label="Pixel ID">
+                <input
+                  type="text"
+                  value={form.fbPixelId}
+                  onChange={(e) => set('fbPixelId', e.target.value)}
+                  placeholder="e.g. 1234567890123456"
+                  className={inputCls}
+                />
+              </InputField>
+              <p className="text-xs text-dark-500">
+                Find it in{' '}
+                <a href="https://www.facebook.com/events/manager" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">
+                  Events Manager → Pixels
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Google Analytics 4 */}
+          <div className="rounded-xl border border-dark-600 bg-dark-700/30 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-dark-600/60">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-white">
+                <span className="font-black text-xs" style={{ color: '#4285F4' }}>G</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">Google Analytics 4</p>
+                <p className="text-xs text-dark-400">Tracks "generate_lead" event on each entry</p>
+              </div>
+              {form.gaId && (
+                <span className="text-[10px] text-brand-green border border-brand-green/30 bg-brand-green/10 px-2 py-0.5 rounded-full shrink-0">Active</span>
+              )}
+            </div>
+            <div className="px-4 py-3 space-y-2">
+              <InputField label="Measurement ID">
+                <input
+                  type="text"
+                  value={form.gaId}
+                  onChange={(e) => set('gaId', e.target.value)}
+                  placeholder="e.g. G-XXXXXXXXXX"
+                  className={inputCls}
+                />
+              </InputField>
+              <p className="text-xs text-dark-500">
+                Find it in{' '}
+                <a href="https://analytics.google.com" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">
+                  GA4 Admin → Data Streams → Measurement ID
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Google Tag Manager */}
+          <div className="rounded-xl border border-dark-600 bg-dark-700/30 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-dark-600/60">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#246FDB' }}>
+                <span className="text-white text-[10px] font-black">GTM</span>
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">Google Tag Manager</p>
+                <p className="text-xs text-dark-400">Push custom data layer events for any tag</p>
+              </div>
+              {form.gtmId && (
+                <span className="text-[10px] text-brand-green border border-brand-green/30 bg-brand-green/10 px-2 py-0.5 rounded-full shrink-0">Active</span>
+              )}
+            </div>
+            <div className="px-4 py-3 space-y-2">
+              <InputField label="Container ID">
+                <input
+                  type="text"
+                  value={form.gtmId}
+                  onChange={(e) => set('gtmId', e.target.value)}
+                  placeholder="e.g. GTM-XXXXXXX"
+                  className={inputCls}
+                />
+              </InputField>
+              <p className="text-xs text-dark-500">
+                Find it in{' '}
+                <a href="https://tagmanager.google.com" target="_blank" rel="noreferrer" className="text-brand-green hover:underline">
+                  GTM → Admin → Container ID
+                </a>
+              </p>
+            </div>
+          </div>
+
+          {/* Custom Scripts */}
+          <div className="rounded-xl border border-dark-600 bg-dark-700/30 overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-dark-600/60">
+              <div className="w-7 h-7 rounded-lg bg-dark-600 flex items-center justify-center shrink-0">
+                <Code2 size={13} className="text-dark-300" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-white">Custom Scripts</p>
+                <p className="text-xs text-dark-400">Add any custom JavaScript to the giveaway page</p>
+              </div>
+              {(form.customHeadScript || form.customBodyScript) && (
+                <span className="text-[10px] text-brand-green border border-brand-green/30 bg-brand-green/10 px-2 py-0.5 rounded-full shrink-0">Active</span>
+              )}
+            </div>
+            <div className="px-4 py-3 space-y-3">
+              <InputField label="Head Script (injected in <head>)">
+                <textarea
+                  value={form.customHeadScript}
+                  onChange={(e) => set('customHeadScript', e.target.value)}
+                  rows={3}
+                  placeholder={'<!-- e.g. TikTok Pixel, Hotjar, etc. -->\n<script>...</script>'}
+                  className={inputCls + ' font-mono text-xs resize-none'}
+                />
+              </InputField>
+              <InputField label="Body Script (injected before </body>)">
+                <textarea
+                  value={form.customBodyScript}
+                  onChange={(e) => set('customBodyScript', e.target.value)}
+                  rows={3}
+                  placeholder={'<!-- e.g. Intercom, Crisp chat, etc. -->\n<script>...</script>'}
+                  className={inputCls + ' font-mono text-xs resize-none'}
+                />
+              </InputField>
+            </div>
+          </div>
+
+          {/* Save button */}
+          {(form.fbPixelId || form.gaId || form.gtmId || form.customHeadScript || form.customBodyScript) && (
+            <button
+              type="button"
+              onClick={() => saveTrackingPixels({ fbPixelId: form.fbPixelId, gaId: form.gaId, gtmId: form.gtmId })}
+              className="w-full flex items-center justify-center gap-2 py-2.5 bg-brand-green/10 border border-brand-green/30 hover:bg-brand-green/20 text-brand-green text-sm font-semibold rounded-xl transition-colors"
+            >
+              <Zap size={14} /> Apply Tracking Scripts
+            </button>
+          )}
         </div>
       </div>
 
