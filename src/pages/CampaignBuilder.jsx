@@ -227,7 +227,7 @@ function InputField({ label, required, error, children }) {
 }
 
 const inputCls =
-  'w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-sm text-white placeholder-dark-400 focus:outline-none focus:border-brand-green transition-colors'
+  'w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-sm text-themed-primary placeholder-dark-400 focus:outline-none focus:border-brand-green transition-colors'
 
 const Toggle = ({ checked, onChange }) => (
   <button
@@ -636,14 +636,14 @@ export default function CampaignBuilder() {
               value={shopify.domain}
               onChange={(e) => setShopify((s) => ({ ...s, domain: e.target.value }))}
               placeholder="mystore.myshopify.com"
-              className="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-white placeholder-dark-400 focus:outline-none focus:border-brand-green"
+              className="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-themed-primary placeholder-dark-400 focus:outline-none focus:border-brand-green"
             />
             <input
               type="password"
               value={shopify.token}
               onChange={(e) => setShopify((s) => ({ ...s, token: e.target.value }))}
               placeholder="Storefront Access Token"
-              className="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-white placeholder-dark-400 focus:outline-none focus:border-brand-green"
+              className="bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-xs text-themed-primary placeholder-dark-400 focus:outline-none focus:border-brand-green"
             />
           </div>
           {shopify.error && <p className="text-[10px] text-red-400 mb-2">{shopify.error}</p>}

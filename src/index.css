@@ -6,10 +6,15 @@
 :root {
   --surface-base:  #f0f4f8;
   --surface-card:  #ffffff;
-  --surface-input: #f1f5f9;
-  --surface-hover: #e2e8f0;
+  --surface-input: #f8fafc;
+  --surface-hover: #f1f5f9;
   --border-color:  #e2e8f0;
-  --text-subtle:   #475569;
+  --text-subtle:   #64748b;
+  --text-primary:  #1e293b;
+  --text-heading:  #0f172a;
+  --brand-green-text: #047857;
+  --brand-green-active-bg: #ecfdf5;
+  --brand-green-active-border: #a7f3d0;
 }
 
 /* ── Dark mode (.dark on <html>) ────────────────────── */
@@ -20,6 +25,11 @@
   --surface-hover: #21262d;
   --border-color:  #30363d;
   --text-subtle:   #8b949e;
+  --text-primary:  #c9d1d9;
+  --text-heading:  #e6edf3;
+  --brand-green-text: #00d084;
+  --brand-green-active-bg: rgba(0, 208, 132, 0.1);
+  --brand-green-active-border: transparent;
 }
 
 /* ── Base ───────────────────────────────────────────── */
@@ -27,47 +37,38 @@
 
 body {
   background-color: var(--surface-base);
-  color: #1f2328;
+  color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   transition: background-color 0.2s, color 0.2s;
 }
 
-.dark body { color: #e6edf3; }
-
 #root { min-height: 100vh; }
 
-/* ── Light mode text fix ────────────────────────────── */
-html:not(.dark) .text-white:not(.theme-preserve *) {
-  color: #1a202c !important;
+/* ── Semantic text utilities ────────────────────────── */
+.text-themed-heading { color: var(--text-heading); }
+.text-themed-primary { color: var(--text-primary); }
+.text-themed-subtle  { color: var(--text-subtle); }
+.text-brand-adaptive { color: var(--brand-green-text); }
+
+.active-nav-item {
+  background-color: var(--brand-green-active-bg);
+  color: var(--brand-green-text);
+  border: 1px solid var(--brand-green-active-border);
 }
-html:not(.dark) .hover\:text-white:hover:not(.theme-preserve *) {
-  color: #1a202c !important;
-}
 
-/* ── Light mode contrast fixes ───────────────────────── */
-
-/* dark-500 is border-color in light (~#e2e8f0) — far too light for text */
-html:not(.dark) .text-dark-500 { color: #64748b !important; }
-/* dark-600 is surface-hover in light (~#e2e8f0) — same problem */
-html:not(.dark) .text-dark-600 { color: #94a3b8 !important; }
-/* dark-300 not in config — would fall through to inherit; make it readable */
-html:not(.dark) .text-dark-300 { color: #374151 !important; }
-
-/* Brand green (#00d084) contrast on white is ~1.9:1 — WCAG fail */
-html:not(.dark) .text-brand-green  { color: #047857 !important; }
-html:not(.dark) .hover\:text-brand-green\/80:hover { color: #065f46 !important; }
-
-/* Colored 400-shade text — designed for dark bg, too light on white */
+/* ── Light mode: colored shades for dark-bg components ─ */
 html:not(.dark) .text-blue-400   { color: #1d4ed8 !important; }
 html:not(.dark) .text-amber-400  { color: #b45309 !important; }
 html:not(.dark) .text-orange-400 { color: #c2410c !important; }
 html:not(.dark) .text-red-400    { color: #b91c1c !important; }
 html:not(.dark) .text-purple-400 { color: #6d28d9 !important; }
 html:not(.dark) .text-teal-400   { color: #0f766e !important; }
+html:not(.dark) .text-brand-green { color: var(--brand-green-text) !important; }
+html:not(.dark) .hover\:text-brand-green\/80:hover { color: #065f46 !important; }
 
-/* Dark-tuned transparent backgrounds — near-invisible on light surfaces */
+/* Transparent backgrounds — dark-tuned → light-safe */
 html:not(.dark) .bg-brand-green\/5  { background-color: #f0fdf4 !important; }
-html:not(.dark) .bg-brand-green\/10 { background-color: #d1fae5 !important; }
+html:not(.dark) .bg-brand-green\/10 { background-color: #ecfdf5 !important; }
 html:not(.dark) .bg-brand-green\/20 { background-color: #a7f3d0 !important; }
 html:not(.dark) .bg-brand-green\/30 { background-color: #6ee7b7 !important; }
 html:not(.dark) .bg-amber-900\/20   { background-color: #fef3c7 !important; }
@@ -80,12 +81,10 @@ html:not(.dark) .bg-purple-500\/10  { background-color: #ede9fe !important; }
 html:not(.dark) .bg-blue-500\/10    { background-color: #dbeafe !important; }
 
 /* Hover row backgrounds */
-html:not(.dark) .hover\:bg-dark-700\/40:hover  { background-color: #e8edf3 !important; }
-html:not(.dark) .hover\:bg-dark-600\/50:hover  { background-color: #e2e8f0 !important; }
-html:not(.dark) .hover\:bg-dark-600:hover      { background-color: #e2e8f0 !important; }
-
-/* Table / section header strip */
-html:not(.dark) .bg-dark-900\/40 { background-color: #f1f5f9 !important; }
+html:not(.dark) .hover\:bg-dark-700\/40:hover  { background-color: #f1f5f9 !important; }
+html:not(.dark) .hover\:bg-dark-600\/50:hover  { background-color: #f1f5f9 !important; }
+html:not(.dark) .hover\:bg-dark-600:hover      { background-color: #f1f5f9 !important; }
+html:not(.dark) .bg-dark-900\/40               { background-color: #f8fafc !important; }
 
 /* Quick action card hover tints */
 html:not(.dark) .hover\:bg-teal-900\/20:hover      { background-color: #ccfbf1 !important; }
@@ -97,21 +96,34 @@ html:not(.dark) .hover\:border-blue-700\/40:hover  { border-color: #93c5fd !impo
 html:not(.dark) .hover\:bg-purple-900\/20:hover    { background-color: #f5f3ff !important; }
 html:not(.dark) .hover\:border-purple-700\/40:hover{ border-color: #c4b5fd !important; }
 
-/* Border overrides for dark-tuned values */
-html:not(.dark) .border-brand-green\/30 { border-color: #6ee7b7 !important; }
+/* Border overrides */
+html:not(.dark) .border-brand-green\/30 { border-color: #a7f3d0 !important; }
 html:not(.dark) .border-amber-700\/40   { border-color: #fcd34d !important; }
 html:not(.dark) .border-red-800\/40     { border-color: #fca5a5 !important; }
 html:not(.dark) .border-amber-800\/50   { border-color: #fcd34d !important; }
-html:not(.dark) .divide-dark-600 > * + * { border-color: #e2e8f0 !important; }
-html:not(.dark) .border-dark-600        { border-color: #e2e8f0 !important; }
-html:not(.dark) .border-dark-700        { border-color: #e9eef4 !important; }
+html:not(.dark) .divide-dark-600 > * + * { border-color: var(--border-color) !important; }
+html:not(.dark) .border-dark-600        { border-color: var(--border-color) !important; }
+html:not(.dark) .border-dark-700        { border-color: #f1f5f9 !important; }
 
-/* Card depth — shadows help distinguish cards from page bg */
+/* Card depth */
 html:not(.dark) .bg-dark-800 {
-  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.07), 0 1px 2px -1px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04);
+}
+
+/* ── Input text color fix (light mode) ─────────────── */
+html:not(.dark) input:not([class*="text-white/"], [class*="bg-white/"]),
+html:not(.dark) textarea:not([class*="text-white/"], [class*="bg-white/"]),
+html:not(.dark) select:not([class*="text-white/"], [class*="bg-white/"]) {
+  color: var(--text-primary);
+}
+html:not(.dark) input::placeholder,
+html:not(.dark) textarea::placeholder {
+  color: var(--text-subtle);
+  opacity: 0.7;
 }
 
 /* ── Scrollbar ──────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--surface-card); }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-subtle); }

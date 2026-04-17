@@ -1,22 +1,19 @@
 import { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import {
-  LayoutDashboard, Plus, Users, Trophy, Eye, Settings, Zap, Gift,
+  LayoutDashboard, Plus, Users, Trophy, Eye, Settings, Gift,
   BarChart2, Shield, Share2, Code, Megaphone, Mail, X, LogOut,
-  KeyRound, Plug, CreditCard, UserCircle, FileText, ShoppingCart,
-  Bell, Wrench, HelpCircle, Rocket, ChevronDown, ChevronUp,
-  ClipboardList, Upload, Globe
+  Plug, ClipboardList, Upload, Globe, ChevronDown, ChevronUp, Wrench, HelpCircle,
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
-/* ─── Flat nav sections ──────────────────────────────────────── */
 const MAIN_SECTIONS = [
   {
     label: 'Main',
     items: [
-      { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
-      { to: '/campaigns/new',  icon: Plus,            label: 'New Campaign' },
-      { to: '/participants',   icon: Users,           label: 'Participants' },
+      { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/campaigns/new', icon: Plus,            label: 'New Campaign' },
+      { to: '/participants',  icon: Users,           label: 'Participants' },
     ],
   },
   {
@@ -37,16 +34,15 @@ const MAIN_SECTIONS = [
   {
     label: 'Tools',
     items: [
-      { to: '/email-editor', icon: Mail,   label: 'Email Templates' },
-      { to: '/embed',        icon: Code,  label: 'Embed & Share' },
-      { to: '/preview',      icon: Eye,   label: 'Landing Page' },
+      { to: '/email-editor',  icon: Mail,   label: 'Email Templates' },
+      { to: '/embed',         icon: Code,   label: 'Embed & Share' },
+      { to: '/preview',       icon: Eye,    label: 'Landing Page' },
       { to: '/import',        icon: Upload, label: 'Import Data' },
       { to: '/custom-domain', icon: Globe,  label: 'Custom Domain' },
     ],
   },
 ]
 
-/* ─── Collapsible dropdown groups ───────────────────────────── */
 const DROPDOWN_GROUPS = [
   {
     key: 'setup',
@@ -54,7 +50,7 @@ const DROPDOWN_GROUPS = [
     icon: Settings,
     prefixes: ['/api-settings', '/integrations-setup', '/subscriptions', '/my-account', '/setup', '/settings'],
     items: [
-      { to: '/api-settings',       label: 'API' },
+      { to: '/api-settings',       label: 'API Settings' },
       { to: '/integrations-setup', label: 'Integrations' },
       { to: '/subscriptions',      label: 'Subscriptions' },
       { to: '/my-account',         label: 'My Account' },
@@ -66,19 +62,13 @@ const DROPDOWN_GROUPS = [
     icon: ClipboardList,
     prefixes: ['/logs/'],
     items: [
-      { to: '/logs/api',           label: 'API' },
+      { to: '/logs/api',           label: 'API Logs' },
       { to: '/logs/orders',        label: 'Orders' },
       { to: '/logs/notifications', label: 'Notifications' },
     ],
   },
 ]
 
-const BOTTOM_LINKS = [
-  { to: '/setup',    icon: Wrench,     label: 'Tools' },
-  { to: '/settings', icon: HelpCircle, label: 'Support' },
-]
-
-/* ─── Collapsible group component ───────────────────────────── */
 function DropdownGroup({ group, onClose }) {
   const location = useLocation()
   const isAnyActive = group.prefixes.some((p) => location.pathname.startsWith(p))
@@ -89,10 +79,10 @@ function DropdownGroup({ group, onClose }) {
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-          isAnyActive && !open
-            ? 'text-brand-green font-medium'
-            : 'text-dark-400 hover:text-white hover:bg-dark-600'
+        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
+          isAnyActive
+            ? 'text-brand-adaptive font-medium'
+            : 'text-themed-subtle hover:text-themed-primary hover:bg-dark-700'
         }`}
       >
         <Icon size={15} className="shrink-0" />
@@ -101,17 +91,17 @@ function DropdownGroup({ group, onClose }) {
       </button>
 
       {open && (
-        <div className="ml-6 mt-0.5 space-y-0.5 border-l border-dark-600 pl-3">
+        <div className="ml-6 mt-0.5 space-y-0.5 border-l border-dark-500 pl-3">
           {group.items.map(({ to, label }) => (
             <NavLink
               key={to}
               to={to}
               onClick={onClose}
               className={({ isActive }) =>
-                `block px-2 py-2 rounded-lg text-sm transition-colors ${
+                `block px-2 py-1.5 rounded-md text-sm transition-all duration-150 ${
                   isActive
-                    ? 'text-brand-green font-medium'
-                    : 'text-dark-400 hover:text-white hover:bg-dark-600'
+                    ? 'text-brand-adaptive font-medium'
+                    : 'text-themed-subtle hover:text-themed-primary hover:bg-dark-700'
                 }`
               }
             >
@@ -129,48 +119,47 @@ export default function Sidebar({ open, onClose }) {
 
   return (
     <>
-      {/* Mobile backdrop */}
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-50 w-64 bg-dark-800 border-r border-dark-500 flex flex-col
+          fixed inset-y-0 left-0 z-50 w-60 bg-dark-800 border-r border-dark-500 flex flex-col
           transform transition-transform duration-300 ease-in-out
           ${open ? 'translate-x-0' : '-translate-x-full'}
-          md:relative md:translate-x-0 md:w-56 md:shrink-0
+          md:relative md:translate-x-0 md:shrink-0
         `}
       >
-        {/* Logo + mobile close */}
-        <div className="px-4 py-5 border-b border-dark-500 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-brand-green flex items-center justify-center shrink-0">
-              <Gift size={16} className="text-dark-900" />
+        {/* Logo */}
+        <div className="px-4 py-4 border-b border-dark-500 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-green flex items-center justify-center shrink-0 shadow-sm">
+              <Gift size={15} className="text-white" style={{ color: '#064e3b' }} />
             </div>
             <div>
-              <p className="text-sm font-bold text-white leading-none">GiveShop</p>
-              <p className="text-xs text-dark-400 mt-0.5">Giveaway App</p>
+              <p className="text-sm font-bold text-themed-heading leading-none">GiveShop</p>
+              <p className="text-[11px] text-themed-subtle mt-0.5">Giveaway App</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="md:hidden w-7 h-7 flex items-center justify-center text-dark-400 hover:text-white rounded-lg hover:bg-dark-600 transition-colors"
+            className="md:hidden w-7 h-7 flex items-center justify-center text-themed-subtle hover:text-themed-primary hover:bg-dark-700 rounded-lg transition-colors"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-4">
-          {/* Flat sections */}
+        <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-5">
           {MAIN_SECTIONS.map(({ label, items }) => (
             <div key={label}>
-              <p className="px-3 mb-1 text-[10px] font-semibold text-dark-500 uppercase tracking-wider">{label}</p>
+              <p className="px-3 mb-1.5 text-[10px] font-semibold text-themed-subtle uppercase tracking-widest opacity-70">
+                {label}
+              </p>
               <div className="space-y-0.5">
                 {items.map(({ to, icon: Icon, label: itemLabel }) => (
                   <NavLink
@@ -178,44 +167,49 @@ export default function Sidebar({ open, onClose }) {
                     to={to}
                     onClick={onClose}
                     className={({ isActive }) =>
-                      `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                      `flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 ${
                         isActive
-                          ? 'bg-brand-green/10 text-brand-green font-medium'
-                          : 'text-dark-400 hover:text-white hover:bg-dark-600'
+                          ? 'active-nav-item font-medium'
+                          : 'text-themed-subtle hover:text-themed-primary hover:bg-dark-700'
                       }`
                     }
                   >
-                    <Icon size={15} />
-                    {itemLabel}
+                    {({ isActive }) => (
+                      <>
+                        <Icon size={15} className={isActive ? 'text-brand-adaptive' : ''} />
+                        {itemLabel}
+                      </>
+                    )}
                   </NavLink>
                 ))}
               </div>
             </div>
           ))}
 
-          {/* Dropdown groups */}
           {DROPDOWN_GROUPS.map((group) => (
             <div key={group.key}>
-              <p className="px-3 mb-1 text-[10px] font-semibold text-dark-500 uppercase tracking-wider">{group.label}</p>
+              <p className="px-3 mb-1.5 text-[10px] font-semibold text-themed-subtle uppercase tracking-widest opacity-70">
+                {group.label}
+              </p>
               <DropdownGroup group={group} onClose={onClose} />
             </div>
           ))}
         </nav>
 
-        {/* Plan badge + user + sign out */}
-        <div className="px-4 py-4 border-t border-dark-500 space-y-2">
-          <div className="bg-dark-700 rounded-lg p-3">
-            <p className="text-xs text-dark-400 mb-1">Current Plan</p>
-            <p className="text-sm font-semibold text-brand-green">Pro Plan</p>
-            <p className="text-xs text-dark-400 mt-1">All features unlocked</p>
+        {/* Footer */}
+        <div className="px-3 py-3 border-t border-dark-500 space-y-2">
+          <div className="bg-dark-700 rounded-xl p-3 border border-dark-500">
+            <p className="text-[10px] font-medium text-themed-subtle uppercase tracking-wider mb-1">Current Plan</p>
+            <p className="text-sm font-bold text-brand-adaptive">Pro Plan</p>
+            <p className="text-[11px] text-themed-subtle mt-0.5">All features unlocked</p>
           </div>
           {user && (
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] text-dark-500 truncate">{user.email}</p>
+            <div className="flex items-center justify-between gap-2 px-1">
+              <p className="text-[11px] text-themed-subtle truncate">{user.email}</p>
               <button
                 onClick={signOut}
                 title="Sign out"
-                className="shrink-0 w-7 h-7 flex items-center justify-center text-dark-500 hover:text-red-400 hover:bg-dark-600 rounded-lg transition-colors"
+                className="shrink-0 w-7 h-7 flex items-center justify-center text-themed-subtle hover:text-red-500 hover:bg-dark-700 rounded-lg transition-colors"
               >
                 <LogOut size={13} />
               </button>
