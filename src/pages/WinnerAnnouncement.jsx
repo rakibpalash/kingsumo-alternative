@@ -1,13 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useStore } from '../store/useStore'
 import { Trophy, Share2, Copy, Check, ExternalLink, Shield, Users, Calendar, Hash } from 'lucide-react'
 
 export default function WinnerAnnouncement() {
-  const { winner, entries, activeCampaign } = useStore()
+  const { winner, winners, entries, activeCampaign, announceWinners } = useStore()
   const [copied, setCopied] = useState(false)
 
-  const proofUrl = winner?.proofUrl || `${window.location.origin}/proof/demo`
+  // Normalise: if winners[] has entries use that, else fall back to single winner
+  const allWinners = winners.length > 0 ? winners : (winner ? [winner] : [])
+  const primaryWinner = allWinners[0] || null
+
+  const proofUrl = primaryWinner?.proofUrl || `${window.location.origin}/proof/${activeCampaign?.id || 'demo'}`
   const validEntries = entries.filter((e) => !e.suspicious)
+
+  // Mark campaign as announced when this page is first viewed
+  useEffect(() => {
+    if (activeCampaign?.id && activeCampaign.status === 'winner_picked') {
+      announceWinners(activeCampaign.id)
+    }
+  }, [activeCampaign?.id]) // eslint-disable-line
 
   const copy = () => {
     navigator.clipboard.writeText(proofUrl)
@@ -15,12 +26,12 @@ export default function WinnerAnnouncement() {
   }
 
   const shareLinks = [
-    { label: 'X / Twitter', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`🎉 We have a winner! Congratulations to our ${activeCampaign?.title || 'giveaway'} winner! Proof: ${proofUrl}`)}`, color: 'bg-black hover:bg-zinc-800' },
+    { label: 'X / Twitter', href: `https://twitter.com/intent/tweet?text=${encodeURIComponent(`We have a winner! Congratulations to our ${activeCampaign?.title || 'giveaway'} winner! Proof: ${proofUrl}`)}`, color: 'bg-black hover:bg-zinc-800' },
     { label: 'Facebook',    href: `https://www.facebook.com/sharer/sharer.php?u=${proofUrl}`, color: 'bg-blue-700 hover:bg-blue-600' },
     { label: 'LinkedIn',    href: `https://www.linkedin.com/sharing/share-offsite/?url=${proofUrl}`, color: 'bg-blue-800 hover:bg-blue-700' },
   ]
 
-  if (!winner) {
+  if (!primaryWinner) {
     return (
       <div className="max-w-2xl">
         <div className="bg-dark-800 border border-dark-500 rounded-xl p-12 text-center">
@@ -42,29 +53,55 @@ export default function WinnerAnnouncement() {
         <p className="text-xs text-dark-400 mt-0.5">Public proof page — share this with your audience</p>
       </div>
 
-      {/* Winner card */}
-      <div className="bg-gradient-to-br from-amber-900/30 to-dark-800 border border-amber-700/40 rounded-2xl p-8 text-center">
-        <div className="flex items-center justify-center mb-3">
-          <Trophy size={48} className="text-amber-400" />
+      {/* Winner card(s) */}
+      {allWinners.length === 1 ? (
+        <div className="bg-gradient-to-br from-amber-900/30 to-dark-800 border border-amber-700/40 rounded-2xl p-8 text-center">
+          <div className="flex items-center justify-center mb-3">
+            <Trophy size={48} className="text-amber-400" />
+          </div>
+          <p className="text-xs text-amber-400 font-semibold uppercase tracking-widest mb-1">Winner Announcement</p>
+          <h2 className="text-3xl font-bold text-white mb-1">{primaryWinner.name}</h2>
+          <p className="text-dark-400 text-sm mb-4">{primaryWinner.email}</p>
+          <div className="inline-flex items-center gap-2 bg-brand-green/20 border border-brand-green/30 rounded-full px-4 py-1.5">
+            <Trophy size={14} className="text-brand-green" />
+            <span className="text-brand-green text-sm font-semibold">{activeCampaign?.prize || 'Prize'}</span>
+          </div>
         </div>
-        <p className="text-xs text-amber-400 font-semibold uppercase tracking-widest mb-1">Winner Announcement</p>
-        <h2 className="text-3xl font-bold text-white mb-1">{winner.name}</h2>
-        <p className="text-dark-400 text-sm mb-4">{winner.email}</p>
-        <div className="inline-flex items-center gap-2 bg-brand-green/20 border border-brand-green/30 rounded-full px-4 py-1.5">
-          <Trophy size={14} className="text-brand-green" />
-          <span className="text-brand-green text-sm font-semibold">{activeCampaign?.prize || 'Prize'}</span>
+      ) : (
+        <div className="bg-gradient-to-br from-amber-900/30 to-dark-800 border border-amber-700/40 rounded-2xl p-6">
+          <p className="text-xs text-amber-400 font-semibold uppercase tracking-widest mb-4 text-center">Winners Announcement</p>
+          <div className="space-y-3">
+            {allWinners.map((w, i) => (
+              <div key={w.email} className="flex items-center gap-4 bg-dark-800/60 rounded-xl p-4">
+                <div className="w-10 h-10 rounded-full bg-amber-400/10 border-2 border-amber-400/30 flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-amber-400">#{i + 1}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-white">{w.name}</p>
+                  <p className="text-xs text-dark-400">{w.email}</p>
+                </div>
+                <Trophy size={16} className="text-amber-400 shrink-0" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 text-center">
+            <div className="inline-flex items-center gap-2 bg-brand-green/20 border border-brand-green/30 rounded-full px-4 py-1.5">
+              <Trophy size={14} className="text-brand-green" />
+              <span className="text-brand-green text-sm font-semibold">{activeCampaign?.prize || 'Prize'}</span>
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Proof stats */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-6">
         <h2 className="text-sm font-semibold text-white mb-4 flex items-center gap-2"><Shield size={14} className="text-brand-green" /> Verifiable Proof of Fair Draw</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
           {[
-            { label: 'Total Entries',  value: validEntries.length,  icon: Users },
-            { label: 'Winner Tickets', value: winner.entries,       icon: Hash },
-            { label: 'Draw Method',    value: 'Weighted Random',    icon: Shield },
-            { label: 'Drawn At',       value: winner.pickedAt ? new Date(winner.pickedAt).toLocaleDateString() : '—', icon: Calendar },
+            { label: 'Total Entries',  value: validEntries.length,           icon: Users },
+            { label: 'Winners',        value: allWinners.length,             icon: Trophy },
+            { label: 'Draw Method',    value: 'Weighted Random',             icon: Shield },
+            { label: 'Drawn At',       value: primaryWinner.pickedAt ? new Date(primaryWinner.pickedAt).toLocaleDateString() : '—', icon: Calendar },
           ].map(({ label, value, icon: Icon }) => (
             <div key={label} className="text-center border border-dark-600 rounded-xl p-3">
               <Icon size={16} className="text-brand-green mx-auto mb-1.5" />
@@ -97,12 +134,12 @@ export default function WinnerAnnouncement() {
         <div className="space-y-2 text-xs">
           {[
             ['Campaign',       activeCampaign?.title || '—'],
-            ['Winner Name',    winner.name],
-            ['Winner Email',   winner.email],
-            ['Entry Method',   winner.method],
-            ['Ticket Weight',  `${winner.entries} tickets (higher weight = better odds)`],
+            ...allWinners.map((w, i) => [
+              allWinners.length > 1 ? `Winner #${i + 1}` : 'Winner',
+              `${w.name} (${w.email})`
+            ]),
             ['Total Pool',     `${validEntries.reduce((s, e) => s + e.entries, 0)} tickets across ${validEntries.length} entries`],
-            ['Drawn At',       winner.pickedAt ? new Date(winner.pickedAt).toLocaleString() : '—'],
+            ['Drawn At',       primaryWinner.pickedAt ? new Date(primaryWinner.pickedAt).toLocaleString() : '—'],
             ['Algorithm',      'Cryptographically weighted random selection'],
           ].map(([k, v]) => (
             <div key={k} className="flex gap-3 py-1.5 border-b border-dark-700 last:border-0">

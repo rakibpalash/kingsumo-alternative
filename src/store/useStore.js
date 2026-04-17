@@ -48,7 +48,9 @@ function mapCampaignFromDB(row) {
     abTest:          s.abTest          || { enabled: false, variantA: {}, variantB: {} },
     customFields:    s.customFields    || [],
     customThankYouUrl: s.customThankYouUrl || '',
-    winner: s.winner || null,
+    winner:         s.winner   || null,
+    winners:        s.winners  || [],
+    numberOfWinners: s.numberOfWinners || 1,
   }
 }
 
@@ -82,6 +84,7 @@ export const useStore = create(
       activeCampaign: null,
       entries:        [],
       winner:         null,
+      winners:        [],
       wizardStep:     null,
 
       // Bot / fraud
@@ -100,7 +103,7 @@ export const useStore = create(
 
       signOut: async () => {
         await supabase.auth.signOut()
-        set({ user: null, campaigns: [], entries: [], activeCampaign: null, winner: null })
+        set({ user: null, campaigns: [], entries: [], activeCampaign: null, winner: null, winners: [] })
       },
 
       // ── Load data from Supabase ───────────────────────────
@@ -157,7 +160,8 @@ export const useStore = create(
           description: data.description || '',
           startDate: data.startDate || '',
           endDate: data.endDate || '',
-          status: 'draft',
+          status: data.status || 'draft',
+          numberOfWinners: data.numberOfWinners || 1,
           entryMethods: { ...(data.entryMethods || {}), discord: false, youtube: false },
           entryValues:  { ...(data.entryValues  || {}), discord: 2, youtube: 2 },
           fraudDetection:  data.fraudDetection  || { blockDuplicateIP: true, blockDuplicateEmail: true, recaptcha: true },
@@ -170,11 +174,12 @@ export const useStore = create(
           customFields:    data.customFields    || [],
           customThankYouUrl: data.customThankYouUrl || '',
           winner: null,
+          winners: [],
           createdAt: now,
         }
 
         // Optimistic update
-        set((s) => ({ campaigns: [newCamp, ...s.campaigns], activeCampaign: newCamp, entries: [], winner: null }))
+        set((s) => ({ campaigns: [newCamp, ...s.campaigns], activeCampaign: newCamp, entries: [], winner: null, winners: [] }))
 
         // Persist to DB
         if (user) {
@@ -227,6 +232,7 @@ export const useStore = create(
           title: `${src.title} (Copy)`,
           status: 'draft',
           winner: null,
+          winners: [],
           createdAt: new Date().toISOString(),
         }
         set((s) => ({ campaigns: [copy, ...s.campaigns] }))
@@ -274,9 +280,80 @@ export const useStore = create(
         }
       },
 
+      publishCampaign: async (id) => {
+        const { user } = get()
+        set((s) => ({
+          campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status: 'active' } : c)),
+          activeCampaign: s.activeCampaign?.id === id ? { ...s.activeCampaign, status: 'active' } : s.activeCampaign,
+        }))
+        if (user) {
+          const { error } = await supabase.from('campaigns').update({ status: 'active' }).eq('id', id)
+          if (error) console.error('publishCampaign:', error)
+        }
+      },
+
+      endCampaign: async (id) => {
+        const { user } = get()
+        set((s) => ({
+          campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status: 'ended' } : c)),
+          activeCampaign: s.activeCampaign?.id === id ? { ...s.activeCampaign, status: 'ended' } : s.activeCampaign,
+        }))
+        if (user) {
+          const { error } = await supabase.from('campaigns').update({ status: 'ended' }).eq('id', id)
+          if (error) console.error('endCampaign:', error)
+        }
+      },
+
+      extendCampaign: async (id, newEndDate) => {
+        const { user } = get()
+        set((s) => ({
+          campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status: 'active', endDate: newEndDate } : c)),
+          activeCampaign: s.activeCampaign?.id === id ? { ...s.activeCampaign, status: 'active', endDate: newEndDate } : s.activeCampaign,
+        }))
+        if (user) {
+          const { error } = await supabase.from('campaigns').update({ status: 'active', end_date: newEndDate }).eq('id', id)
+          if (error) console.error('extendCampaign:', error)
+        }
+      },
+
+      autoEndExpiredCampaigns: () => {
+        const { campaigns } = get()
+        const endCampaign = get().endCampaign
+        const now = new Date()
+        campaigns.forEach((c) => {
+          if (c.status === 'active' && c.endDate && new Date(c.endDate) < now) {
+            endCampaign(c.id)
+          }
+        })
+      },
+
+      announceWinners: async (id) => {
+        const { user } = get()
+        set((s) => ({
+          campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status: 'announced' } : c)),
+          activeCampaign: s.activeCampaign?.id === id ? { ...s.activeCampaign, status: 'announced' } : s.activeCampaign,
+        }))
+        if (user) {
+          const { error } = await supabase.from('campaigns').update({ status: 'announced' }).eq('id', id)
+          if (error) console.error('announceWinners:', error)
+        }
+      },
+
+      completeCampaign: async (id) => {
+        const { user } = get()
+        set((s) => ({
+          campaigns: s.campaigns.map((c) => (c.id === id ? { ...c, status: 'completed' } : c)),
+          activeCampaign: s.activeCampaign?.id === id ? { ...s.activeCampaign, status: 'completed' } : s.activeCampaign,
+        }))
+        if (user) {
+          const { error } = await supabase.from('campaigns').update({ status: 'completed' }).eq('id', id)
+          if (error) console.error('completeCampaign:', error)
+        }
+      },
+
       setActiveCampaign: async (campaign) => {
         const { user } = get()
-        set({ activeCampaign: campaign, winner: campaign.winner || null })
+        set({ activeCampaign: campaign, winner: campaign.winner || null, winners: campaign.winners || [] })
 
         // Load entries for this campaign
         if (user && campaign?.id) {
@@ -416,45 +493,65 @@ export const useStore = create(
 
       // ── Winner ────────────────────────────────────────────
       pickWinner: async (preSelected) => {
-        const { entries, activeCampaign, user } = get()
+        const { entries, activeCampaign, winners, user } = get()
         const valid = entries.filter((e) => !e.suspicious)
         if (!valid.length) return null
 
-        const pool   = valid.flatMap((e) => Array(e.entries).fill(e))
-        const winner = preSelected || pool[Math.floor(Math.random() * pool.length)]
+        // Exclude already-picked winners from the pool
+        const pickedEmails = new Set(winners.map((w) => w.email))
+        const eligible = valid.filter((e) => !pickedEmails.has(e.email))
+        if (!eligible.length) return null
+
+        const pool   = eligible.flatMap((e) => Array(e.entries).fill(e))
+        const picked = preSelected || pool[Math.floor(Math.random() * pool.length)]
         const winnerData = {
-          ...winner,
+          ...picked,
           pickedAt: new Date().toISOString(),
           proofUrl: `${window.location.origin}/proof/${activeCampaign?.id}`,
         }
 
+        const newWinners    = [...winners, winnerData]
+        const target        = activeCampaign?.numberOfWinners || 1
+        const allPicked     = newWinners.length >= target
+        const nextStatus    = allPicked ? 'winner_picked' : (activeCampaign?.status || 'ended')
+
         set((s) => ({
-          winner: winnerData,
-          activeCampaign: s.activeCampaign ? { ...s.activeCampaign, winner: winnerData, status: 'completed' } : null,
+          winner:  winnerData,
+          winners: newWinners,
+          activeCampaign: s.activeCampaign ? {
+            ...s.activeCampaign,
+            winner:  winnerData,
+            winners: newWinners,
+            status:  nextStatus,
+          } : null,
           campaigns: s.campaigns.map((c) =>
-            c.id === activeCampaign?.id ? { ...c, winner: winnerData, status: 'completed' } : c
+            c.id === activeCampaign?.id
+              ? { ...c, winner: winnerData, winners: newWinners, status: nextStatus }
+              : c
           ),
         }))
 
-        // Persist winner + update campaign status
+        // Persist winner to DB
         if (user && activeCampaign?.id) {
           await supabase.from('winners').insert({
             campaign_id: activeCampaign.id,
-            entry_id:    winner.id,
-            name:        winner.name,
-            email:       winner.email,
-            method:      winner.method,
-            entries:     winner.entries,
+            entry_id:    picked.id,
+            name:        picked.name,
+            email:       picked.email,
+            method:      picked.method,
+            entries:     picked.entries,
             proof_url:   winnerData.proofUrl,
           })
-          await supabase.from('campaigns').update({ status: 'completed' }).eq('id', activeCampaign.id)
+          if (allPicked) {
+            await supabase.from('campaigns').update({ status: 'winner_picked' }).eq('id', activeCampaign.id)
+          }
         }
 
         return winnerData
       },
 
-      clearWinner: () => set({ winner: null }),
+      clearWinner: () => set({ winner: null, winners: [] }),
     }),
-    { name: 'giveaway-store-v3' }
+    { name: 'giveaway-store-v4' }
   )
 )

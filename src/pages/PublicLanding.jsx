@@ -6,6 +6,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
+import { Helmet } from 'react-helmet-async'
 import { supabase } from '../lib/supabase'
 import { triggerEntryIntegrations } from '../lib/integrations'
 import {
@@ -103,6 +104,9 @@ export default function PublicLanding() {
         rulesText: s.rulesText || '',
         termsUrl: s.termsUrl || '',
         customFields: s.customFields || [],
+        seoTitle: s.seoTitle || '',
+        seoDescription: s.seoDescription || '',
+        ogImage: s.ogImage || '',
       })
 
       // Get entry count
@@ -217,7 +221,30 @@ export default function PublicLanding() {
 
   const isEnded = campaign.status === 'completed' || (campaign.endDate && new Date(campaign.endDate) < new Date())
 
+  const metaTitle       = campaign.seoTitle       || campaign.title       || 'Giveaway'
+  const metaDescription = campaign.seoDescription || campaign.description || `Enter for a chance to win ${campaign.prize || 'an amazing prize'}!`
+  const metaImage       = campaign.ogImage        || campaign.prizeImageUrl || ''
+  const metaUrl         = window.location.href
+
   return (
+    <>
+    <Helmet>
+      <title>{metaTitle}</title>
+      <meta name="description" content={metaDescription} />
+      {/* Open Graph */}
+      <meta property="og:type"        content="website" />
+      <meta property="og:url"         content={metaUrl} />
+      <meta property="og:title"       content={metaTitle} />
+      <meta property="og:description" content={metaDescription} />
+      {metaImage && <meta property="og:image" content={metaImage} />}
+      {metaImage && <meta property="og:image:width"  content="1200" />}
+      {metaImage && <meta property="og:image:height" content="630" />}
+      {/* Twitter Card */}
+      <meta name="twitter:card"        content={metaImage ? 'summary_large_image' : 'summary'} />
+      <meta name="twitter:title"       content={metaTitle} />
+      <meta name="twitter:description" content={metaDescription} />
+      {metaImage && <meta name="twitter:image" content={metaImage} />}
+    </Helmet>
     <div className="min-h-screen" style={{ background: `linear-gradient(160deg, ${color}22 0%, #0d1117 40%)` }}>
       <div className="max-w-lg mx-auto px-4 py-10">
 
@@ -444,5 +471,6 @@ export default function PublicLanding() {
         </p>
       </div>
     </div>
+    </>
   )
 }

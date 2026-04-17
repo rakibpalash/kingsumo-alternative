@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Plus, Search, Trophy, Users, TrendingUp, AlertTriangle,
@@ -9,11 +9,14 @@ import {
 import { useStore } from '../store/useStore'
 
 const STATUS_CONFIG = {
-  draft:          { label: 'Draft',          color: 'text-dark-400',     bg: 'bg-dark-600',          dot: 'bg-dark-400' },
-  active:         { label: 'Active',         color: 'text-brand-green',  bg: 'bg-brand-green/10',    dot: 'bg-brand-green animate-pulse' },
-  'ready-to-award': { label: 'Ready to Award', color: 'text-amber-400', bg: 'bg-amber-900/20',      dot: 'bg-amber-400' },
-  completed:      { label: 'Completed',      color: 'text-blue-400',     bg: 'bg-blue-900/20',       dot: 'bg-blue-400' },
-  paused:         { label: 'Paused',         color: 'text-orange-400',   bg: 'bg-orange-900/20',     dot: 'bg-orange-400' },
+  draft:           { label: 'Draft',           color: 'text-dark-400',    bg: 'bg-dark-600',         dot: 'bg-dark-400' },
+  active:          { label: 'Active',          color: 'text-brand-green', bg: 'bg-brand-green/10',   dot: 'bg-brand-green animate-pulse' },
+  ended:           { label: 'Ended',           color: 'text-amber-400',   bg: 'bg-amber-900/20',     dot: 'bg-amber-400' },
+  winner_picked:   { label: 'Winner Picked',   color: 'text-purple-400',  bg: 'bg-purple-900/20',    dot: 'bg-purple-400' },
+  announced:       { label: 'Announced',       color: 'text-blue-400',    bg: 'bg-blue-900/20',      dot: 'bg-blue-400 animate-pulse' },
+  completed:       { label: 'Completed',       color: 'text-dark-400',    bg: 'bg-dark-700',         dot: 'bg-dark-500' },
+  'ready-to-award': { label: 'Ready to Award', color: 'text-amber-400',   bg: 'bg-amber-900/20',     dot: 'bg-amber-400' },
+  paused:          { label: 'Paused',          color: 'text-orange-400',  bg: 'bg-orange-900/20',    dot: 'bg-orange-400' },
 }
 
 function StatusBadge({ status }) {
@@ -149,10 +152,16 @@ export default function Dashboard() {
   const {
     campaigns, entries, activeCampaign, setActiveCampaign,
     botAlerts, dismissBotAlert, duplicateCampaign, deleteCampaign, setCampaignStatus,
+    publishCampaign, endCampaign, extendCampaign, autoEndExpiredCampaigns, announceWinners, completeCampaign,
   } = useStore()
 
   const [search, setSearch] = useState('')
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [extendModal, setExtendModal] = useState(null) // campaignId
+  const [extendDate, setExtendDate] = useState('')
+
+  // Auto-end campaigns whose end date has passed
+  useEffect(() => { autoEndExpiredCampaigns() }, []) // eslint-disable-line
 
   const validEntries  = entries.filter((e) => !e.suspicious)
   const totalEntries  = validEntries.length
@@ -185,6 +194,29 @@ export default function Dashboard() {
 
       {/* Onboarding checklist — shown until all 4 steps complete */}
       <OnboardingChecklist campaigns={campaigns} entries={entries} navigate={navigate} />
+
+      {/* Ended campaigns — pick winner prompt */}
+      {campaigns.filter((c) => c.status === 'ended').map((c) => (
+        <div key={c.id} className="bg-amber-900/20 border border-amber-700/40 rounded-xl px-5 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Trophy size={14} className="text-amber-400 shrink-0" />
+              <div>
+                <span className="text-sm font-semibold text-amber-400">"{c.title}" has ended</span>
+                <span className="text-xs text-amber-400/70 ml-2">Ready to pick a winner</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <s-button variant="primary" icon="trophy" onClick={() => { setActiveCampaign(c); navigate('/winner') }}>
+                Pick Winner
+              </s-button>
+              <s-button variant="secondary" onClick={() => { setExtendModal(c.id); setExtendDate(c.endDate || '') }}>
+                Extend
+              </s-button>
+            </div>
+          </div>
+        </div>
+      ))}
 
       {/* Bot alert banner */}
       {botAlerts.length > 0 && (
@@ -374,8 +406,8 @@ export default function Dashboard() {
 
                   {/* Ends in */}
                   <div className="text-xs text-dark-400">
-                    {camp.status === 'completed' ? (
-                      <span className="text-blue-400">Ended</span>
+                    {['ended','winner_picked','announced','completed'].includes(camp.status) ? (
+                      <span className="text-dark-500">Ended</span>
                     ) : days === 0 ? (
                       <span className="text-red-400 font-medium">Ends today</span>
                     ) : days !== null ? (
@@ -387,31 +419,63 @@ export default function Dashboard() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                    {/* Promote / Quick action */}
+                    {camp.status === 'draft' && (
+                      <s-button
+                        variant="primary"
+                        onClick={() => { publishCampaign(camp.id); setActiveCampaign({ ...camp, status: 'active' }) }}
+                      >
+                        Publish
+                      </s-button>
+                    )}
                     {camp.status === 'active' && (
                       <s-button
                         variant="secondary"
                         icon="trophy"
-                        onClick={() => { setActiveCampaign(camp); navigate('/winner') }}
+                        onClick={() => { endCampaign(camp.id); setActiveCampaign({ ...camp, status: 'ended' }) }}
                       >
-                        Pick Winner
+                        End Now
                       </s-button>
                     )}
-                    {camp.status === 'ready-to-award' && (
-                      <s-button
-                        variant="primary"
-                        icon="trophy"
-                        onClick={() => { setActiveCampaign(camp); navigate('/winner') }}
-                      >
-                        Award Winner
-                      </s-button>
+                    {camp.status === 'ended' && (
+                      <>
+                        <s-button
+                          variant="primary"
+                          icon="trophy"
+                          onClick={() => { setActiveCampaign(camp); navigate('/winner') }}
+                        >
+                          Pick Winner
+                        </s-button>
+                        <s-button
+                          variant="secondary"
+                          onClick={() => { setExtendModal(camp.id); setExtendDate(camp.endDate || '') }}
+                        >
+                          Extend
+                        </s-button>
+                      </>
                     )}
-                    {camp.status === 'draft' && (
+                    {(camp.status === 'ready-to-award' || camp.status === 'winner_picked') && (
+                      <>
+                        <s-button
+                          variant="primary"
+                          icon="trophy"
+                          onClick={() => { setActiveCampaign(camp); navigate('/winner') }}
+                        >
+                          Pick Winner
+                        </s-button>
+                        <s-button
+                          variant="secondary"
+                          onClick={() => { setActiveCampaign(camp); navigate('/winner-announcement') }}
+                        >
+                          Announce
+                        </s-button>
+                      </>
+                    )}
+                    {camp.status === 'announced' && (
                       <s-button
                         variant="secondary"
-                        onClick={() => { setCampaignStatus(camp.id, 'active'); setActiveCampaign({ ...camp, status: 'active' }) }}
+                        onClick={() => completeCampaign(camp.id)}
                       >
-                        Activate
+                        Mark Complete
                       </s-button>
                     )}
 
@@ -435,6 +499,36 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      {/* Extend campaign modal */}
+      {extendModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+          <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-bold text-white">Extend Campaign</p>
+              <button onClick={() => setExtendModal(null)} className="text-dark-400 hover:text-white transition-colors"><X size={16} /></button>
+            </div>
+            <p className="text-xs text-dark-400">Pick a new end date to reactivate this campaign.</p>
+            <input
+              type="date"
+              value={extendDate}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => setExtendDate(e.target.value)}
+              className="w-full bg-dark-700 border border-dark-500 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-green"
+            />
+            <div className="flex gap-2 justify-end">
+              <s-button variant="secondary" onClick={() => setExtendModal(null)}>Cancel</s-button>
+              <s-button
+                variant="primary"
+                disabled={!extendDate}
+                onClick={() => { extendCampaign(extendModal, extendDate); setExtendModal(null) }}
+              >
+                Reactivate
+              </s-button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Quick actions row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

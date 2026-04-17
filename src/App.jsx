@@ -23,6 +23,14 @@ import EmailTemplateEditor from './pages/EmailTemplateEditor'
 import EntryPage from './pages/EntryPage'
 import ProofPage from './pages/ProofPage'
 import ClaimPage from './pages/ClaimPage'
+import ApiSettings from './pages/ApiSettings'
+import IntegrationsPage from './pages/IntegrationsPage'
+import IntegrationSetup from './pages/IntegrationSetup'
+import Subscriptions from './pages/Subscriptions'
+import MyAccount from './pages/MyAccount'
+import ApiLogs from './pages/ApiLogs'
+import ImportPage from './pages/ImportPage'
+import CustomDomain from './pages/CustomDomain'
 
 function AppShell({ session }) {
   if (!session) return <AuthPage />
@@ -44,6 +52,16 @@ function AppShell({ session }) {
         <Route path="leaderboard"         element={<Leaderboard />} />
         <Route path="embed"               element={<EmbedWidget />} />
         <Route path="email-editor"        element={<EmailTemplateEditor />} />
+        <Route path="api-settings"              element={<ApiSettings />} />
+        <Route path="integrations-setup"        element={<IntegrationsPage />} />
+        <Route path="integrations-setup/:service" element={<IntegrationSetup />} />
+        <Route path="subscriptions"             element={<Subscriptions />} />
+        <Route path="my-account"                element={<MyAccount />} />
+        <Route path="logs/api"                  element={<ApiLogs />} />
+        <Route path="logs/orders"               element={<ApiLogs type="orders" />} />
+        <Route path="logs/notifications"        element={<ApiLogs type="notifications" />} />
+        <Route path="import"                    element={<ImportPage />} />
+        <Route path="custom-domain"             element={<CustomDomain />} />
       </Route>
     </Routes>
   )

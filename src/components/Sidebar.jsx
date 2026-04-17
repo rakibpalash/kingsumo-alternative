@@ -1,11 +1,16 @@
-import { NavLink } from 'react-router-dom'
+import { useState } from 'react'
+import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Plus, Users, Trophy, Eye, Settings, Zap, Gift,
-  BarChart2, Shield, Share2, Code, Megaphone, Mail, X, LogOut
+  BarChart2, Shield, Share2, Code, Megaphone, Mail, X, LogOut,
+  KeyRound, Plug, CreditCard, UserCircle, FileText, ShoppingCart,
+  Bell, Wrench, HelpCircle, Rocket, ChevronDown, ChevronUp,
+  ClipboardList, Upload, Globe
 } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
-const NAV_SECTIONS = [
+/* ─── Flat nav sections ──────────────────────────────────────── */
+const MAIN_SECTIONS = [
   {
     label: 'Main',
     items: [
@@ -24,27 +29,100 @@ const NAV_SECTIONS = [
   {
     label: 'Growth',
     items: [
-      { to: '/analytics',    icon: BarChart2, label: 'Analytics' },
-      { to: '/leaderboard',  icon: Share2,    label: 'Leaderboard' },
-      { to: '/bot-detection',icon: Shield,    label: 'Bot Detection' },
+      { to: '/analytics',     icon: BarChart2, label: 'Analytics' },
+      { to: '/leaderboard',   icon: Share2,    label: 'Leaderboard' },
+      { to: '/bot-detection', icon: Shield,    label: 'Bot Detection' },
     ],
   },
   {
     label: 'Tools',
     items: [
-      { to: '/email-editor', icon: Mail,  label: 'Email Templates' },
+      { to: '/email-editor', icon: Mail,   label: 'Email Templates' },
       { to: '/embed',        icon: Code,  label: 'Embed & Share' },
       { to: '/preview',      icon: Eye,   label: 'Landing Page' },
-    ],
-  },
-  {
-    label: 'Config',
-    items: [
-      { to: '/setup',    icon: Zap,      label: 'Setup Wizard' },
-      { to: '/settings', icon: Settings, label: 'Settings' },
+      { to: '/import',        icon: Upload, label: 'Import Data' },
+      { to: '/custom-domain', icon: Globe,  label: 'Custom Domain' },
     ],
   },
 ]
+
+/* ─── Collapsible dropdown groups ───────────────────────────── */
+const DROPDOWN_GROUPS = [
+  {
+    key: 'setup',
+    label: 'Setup',
+    icon: Settings,
+    prefixes: ['/api-settings', '/integrations-setup', '/subscriptions', '/my-account', '/setup', '/settings'],
+    items: [
+      { to: '/api-settings',       label: 'API' },
+      { to: '/integrations-setup', label: 'Integrations' },
+      { to: '/subscriptions',      label: 'Subscriptions' },
+      { to: '/my-account',         label: 'My Account' },
+    ],
+  },
+  {
+    key: 'logs',
+    label: 'Logs',
+    icon: ClipboardList,
+    prefixes: ['/logs/'],
+    items: [
+      { to: '/logs/api',           label: 'API' },
+      { to: '/logs/orders',        label: 'Orders' },
+      { to: '/logs/notifications', label: 'Notifications' },
+    ],
+  },
+]
+
+const BOTTOM_LINKS = [
+  { to: '/setup',    icon: Wrench,     label: 'Tools' },
+  { to: '/settings', icon: HelpCircle, label: 'Support' },
+]
+
+/* ─── Collapsible group component ───────────────────────────── */
+function DropdownGroup({ group, onClose }) {
+  const location = useLocation()
+  const isAnyActive = group.prefixes.some((p) => location.pathname.startsWith(p))
+  const [open, setOpen] = useState(isAnyActive)
+  const Icon = group.icon
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+          isAnyActive && !open
+            ? 'text-brand-green font-medium'
+            : 'text-dark-400 hover:text-white hover:bg-dark-600'
+        }`}
+      >
+        <Icon size={15} className="shrink-0" />
+        <span className="flex-1 text-left">{group.label}</span>
+        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+      </button>
+
+      {open && (
+        <div className="ml-6 mt-0.5 space-y-0.5 border-l border-dark-600 pl-3">
+          {group.items.map(({ to, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={onClose}
+              className={({ isActive }) =>
+                `block px-2 py-2 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? 'text-brand-green font-medium'
+                    : 'text-dark-400 hover:text-white hover:bg-dark-600'
+                }`
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Sidebar({ open, onClose }) {
   const { user, signOut } = useStore()
@@ -89,7 +167,8 @@ export default function Sidebar({ open, onClose }) {
 
         {/* Nav */}
         <nav className="flex-1 px-2 py-3 overflow-y-auto space-y-4">
-          {NAV_SECTIONS.map(({ label, items }) => (
+          {/* Flat sections */}
+          {MAIN_SECTIONS.map(({ label, items }) => (
             <div key={label}>
               <p className="px-3 mb-1 text-[10px] font-semibold text-dark-500 uppercase tracking-wider">{label}</p>
               <div className="space-y-0.5">
@@ -111,6 +190,14 @@ export default function Sidebar({ open, onClose }) {
                   </NavLink>
                 ))}
               </div>
+            </div>
+          ))}
+
+          {/* Dropdown groups */}
+          {DROPDOWN_GROUPS.map((group) => (
+            <div key={group.key}>
+              <p className="px-3 mb-1 text-[10px] font-semibold text-dark-500 uppercase tracking-wider">{group.label}</p>
+              <DropdownGroup group={group} onClose={onClose} />
             </div>
           ))}
         </nav>

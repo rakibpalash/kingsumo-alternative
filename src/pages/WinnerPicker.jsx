@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react'
-import { Trophy, RefreshCw, Check, ExternalLink, Mail, Shield, Zap, RotateCcw, Copy, X, Link } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Trophy, RefreshCw, Check, ExternalLink, Mail, Shield, Zap, RotateCcw, Copy, X, Link, ChevronRight, Users } from 'lucide-react'
 import { useStore } from '../store/useStore'
 
 const SEGMENT_COLORS = [
@@ -9,7 +10,7 @@ const SEGMENT_COLORS = [
 ]
 
 /* ── Spin Wheel ─────────────────────────────────────────────── */
-function SpinWheel({ entries, onWinner }) {
+function SpinWheel({ entries, onWinner, disabled }) {
   const [rotation, setRotation]   = useState(0)
   const [spinning, setSpinning]   = useState(false)
   const [localWinner, setLocalWinner] = useState(null)
@@ -39,7 +40,7 @@ function SpinWheel({ entries, onWinner }) {
   }
 
   const spin = () => {
-    if (spinning || !entries.length) return
+    if (spinning || !entries.length || disabled) return
 
     // Weighted random pick
     const pool = entries.flatMap((e) => Array(e.entries).fill(e))
@@ -52,7 +53,7 @@ function SpinWheel({ entries, onWinner }) {
     // Land pointer (top = 0°) on middle of winning segment
     const targetAngle = seg.startAngle + seg.angle / 2
     const offset = (360 - targetAngle % 360) % 360
-    const newRot = currentRot.current + 5 * 360 + offset + 10 // +10 to avoid exact edge
+    const newRot = currentRot.current + 5 * 360 + offset + 10
 
     setSpinning(true)
     setLocalWinner(null)
@@ -78,7 +79,6 @@ function SpinWheel({ entries, onWinner }) {
     <div className="flex flex-col items-center gap-5">
       {/* Wheel + pointer */}
       <div className="relative" style={{ width: size, height: size }}>
-        {/* Pointer arrow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1 z-10 drop-shadow-lg">
           <div style={{
             width: 0, height: 0,
@@ -89,7 +89,6 @@ function SpinWheel({ entries, onWinner }) {
           }} />
         </div>
 
-        {/* Spinning SVG */}
         <svg
           width={size}
           height={size}
@@ -107,7 +106,7 @@ function SpinWheel({ entries, onWinner }) {
             segments.map((seg) => {
               const mid = seg.startAngle + seg.angle / 2
               const rad = (d) => (d - 90) * (Math.PI / 180)
-              const tr  = 90 // text radius
+              const tr  = 90
               const tx  = 150 + tr * Math.cos(rad(mid))
               const ty  = 150 + tr * Math.sin(rad(mid))
 
@@ -133,19 +132,16 @@ function SpinWheel({ entries, onWinner }) {
             })
           )}
 
-          {/* Outer ring */}
           <circle cx="150" cy="150" r="130" fill="none" stroke="#ffffff18" strokeWidth="3" />
-          {/* Center hub */}
           <circle cx="150" cy="150" r="22" fill="#111827" stroke="#374151" strokeWidth="3" />
           <circle cx="150" cy="150" r="10" fill="#00d084" />
         </svg>
       </div>
 
-      {/* Action */}
       {!localWinner ? (
         <button
           onClick={spin}
-          disabled={spinning || !entries.length}
+          disabled={spinning || !entries.length || disabled}
           className="flex items-center gap-2 px-10 py-3 bg-brand-green text-dark-900 font-bold rounded-xl text-base hover:bg-brand-green/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed shadow-lg"
         >
           {spinning
@@ -156,55 +152,169 @@ function SpinWheel({ entries, onWinner }) {
         <div className="text-center space-y-2">
           <p className="text-brand-green font-bold text-xl flex items-center justify-center gap-2"><Trophy size={18} /> {localWinner.name}!</p>
           <p className="text-xs text-dark-400">{localWinner.email}</p>
-          <button
-            onClick={reset}
-            className="flex items-center gap-1.5 text-xs text-dark-400 hover:text-white mx-auto transition-colors mt-1"
-          >
-            <RotateCcw size={11} /> Spin again
-          </button>
+          {!disabled && (
+            <button
+              onClick={reset}
+              className="flex items-center gap-1.5 text-xs text-dark-400 hover:text-white mx-auto transition-colors mt-1"
+            >
+              <RotateCcw size={11} /> Spin again
+            </button>
+          )}
         </div>
       )}
 
       {!entries.length && (
-        <p className="text-xs text-red-400">No valid entries to spin</p>
+        <p className="text-xs text-red-400">No eligible entries to spin</p>
       )}
+    </div>
+  )
+}
+
+/* ── Email Modal ────────────────────────────────────────────── */
+function EmailModal({ winner, activeCampaign, onClose }) {
+  const [emailCopied, setEmailCopied] = useState(false)
+  const claimLink = `${window.location.origin}/claim/${activeCampaign?.id}`
+  const subject = `Congratulations! You won ${activeCampaign?.prize || 'our giveaway'}!`
+  const body = `Hi ${winner.name},\n\nCongratulations! You've been selected as the winner of our "${activeCampaign?.title || 'giveaway'}" giveaway!\n\nPrize: ${activeCampaign?.prize || ''}${activeCampaign?.prizeValue ? ` (valued at $${activeCampaign.prizeValue})` : ''}\n\nPlease visit the link below to claim your prize and submit your shipping address:\n${claimLink}\n\nThis link expires in 7 days. If you have any questions, reply to this email.\n\nCongratulations again!\n`
+  const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(winner.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+  const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(winner.email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+
+  const copyEmail = () => {
+    navigator.clipboard.writeText(`To: ${winner.email}\nSubject: ${subject}\n\n${body}`)
+    setEmailCopied(true)
+    setTimeout(() => setEmailCopied(false), 2000)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
+      <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-lg">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-dark-600">
+          <p className="text-sm font-bold text-white flex items-center gap-2"><Mail size={14} className="text-brand-green" /> Notify Winner</p>
+          <button onClick={onClose} className="text-dark-400 hover:text-white transition-colors"><X size={16} /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div className="bg-dark-700 rounded-xl p-3">
+            <p className="text-[10px] text-dark-400 mb-0.5">To</p>
+            <p className="text-sm font-semibold text-white">{winner.name} <span className="text-dark-400 font-normal">— {winner.email}</span></p>
+          </div>
+          <div className="bg-dark-700 rounded-xl p-3">
+            <p className="text-[10px] text-dark-400 mb-0.5">Subject</p>
+            <p className="text-sm text-white">{subject}</p>
+          </div>
+          <div className="bg-dark-700 rounded-xl p-3">
+            <p className="text-[10px] text-dark-400 mb-1">Message</p>
+            <pre className="text-xs text-dark-300 whitespace-pre-wrap font-sans leading-relaxed max-h-40 overflow-y-auto">{body}</pre>
+          </div>
+          <div className="space-y-2">
+            <p className="text-[10px] text-dark-400 uppercase tracking-wider">Send via</p>
+            <div className="grid grid-cols-2 gap-2">
+              <a href={gmailUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg text-xs transition-colors">
+                <Mail size={13} /> Open in Gmail
+              </a>
+              <a href={outlookUrl} target="_blank" rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-xs transition-colors">
+                <Mail size={13} /> Open in Outlook
+              </a>
+            </div>
+            <button onClick={copyEmail}
+              className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-dark-700 border border-dark-500 hover:border-dark-400 text-white rounded-lg text-xs transition-colors">
+              {emailCopied ? <><Check size={13} className="text-brand-green" /> Copied!</> : <><Copy size={13} /> Copy Full Email to Clipboard</>}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
 
 /* ── Main Page ──────────────────────────────────────────────── */
 export default function WinnerPicker() {
-  const { entries, activeCampaign, winner, pickWinner, clearWinner } = useStore()
-  const [mode, setMode]         = useState('wheel') // 'quick' | 'wheel'
-  const [spinning, setSpinning] = useState(false)
-  const [notified, setNotified] = useState(false)
-  const [showEmailModal, setShowEmailModal] = useState(false)
-  const [emailCopied, setEmailCopied] = useState(false)
+  const navigate = useNavigate()
+  const { entries, activeCampaign, winner, winners, pickWinner, clearWinner } = useStore()
+  const [mode, setMode]             = useState('wheel')
+  const [spinning, setSpinning]     = useState(false)
+  const [notified, setNotified]     = useState(false)
+  const [emailModalWinner, setEmailModalWinner] = useState(null)
+
+  const numberOfWinners = activeCampaign?.numberOfWinners || 1
+  const pickedCount     = winners.length
+  const allPicked       = pickedCount >= numberOfWinners
 
   const validEntries = entries.filter((e) => !e.suspicious)
-  const pool = validEntries.flatMap((e) => Array(e.entries).fill(e))
+  // Exclude already-picked winners from the eligible pool
+  const pickedEmails = new Set(winners.map((w) => w.email))
+  const eligibleEntries = validEntries.filter((e) => !pickedEmails.has(e.email))
+  const pool = eligibleEntries.flatMap((e) => Array(e.entries).fill(e))
 
   const handleQuickPick = () => {
-    if (!validEntries.length) return
+    if (!eligibleEntries.length || allPicked) return
     setSpinning(true)
-    setNotified(false)
-    setTimeout(() => { pickWinner(); setSpinning(false) }, 2000)
+    setTimeout(async () => {
+      const w = await pickWinner()
+      setSpinning(false)
+      if (w) setEmailModalWinner(w)
+    }, 2000)
   }
 
-  const handleWheelWinner = (picked) => {
-    // Persist wheel result the same way as quick pick
-    pickWinner(picked)
-    setNotified(false)
+  const handleWheelWinner = async (picked) => {
+    const w = await pickWinner(picked)
+    if (w) setEmailModalWinner(w)
+  }
+
+  const handleAnnounce = () => {
+    navigate('/winner-announcement')
   }
 
   return (
     <div className="max-w-2xl space-y-6">
+      {/* Progress bar for multiple winners */}
+      {numberOfWinners > 1 && (
+        <div className="bg-dark-800 border border-dark-500 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-white flex items-center gap-2">
+              <Users size={14} className="text-brand-green" />
+              Winners: {pickedCount} of {numberOfWinners} selected
+            </p>
+            {allPicked && (
+              <span className="text-xs px-2 py-0.5 bg-brand-green/10 text-brand-green border border-brand-green/20 rounded-full">All done!</span>
+            )}
+          </div>
+          <div className="flex gap-1.5">
+            {Array.from({ length: numberOfWinners }).map((_, i) => (
+              <div
+                key={i}
+                className={`flex-1 h-2 rounded-full transition-colors ${i < pickedCount ? 'bg-brand-green' : 'bg-dark-600'}`}
+              />
+            ))}
+          </div>
+          {winners.length > 0 && (
+            <div className="mt-3 space-y-1.5">
+              {winners.map((w, i) => (
+                <div key={w.email} className="flex items-center gap-2 text-xs">
+                  <span className="w-5 h-5 rounded-full bg-brand-green/10 border border-brand-green/20 flex items-center justify-center text-[10px] font-bold text-brand-green">{i + 1}</span>
+                  <span className="font-medium text-white">{w.name}</span>
+                  <span className="text-dark-400">{w.email}</span>
+                  <button
+                    onClick={() => setEmailModalWinner(w)}
+                    className="ml-auto text-dark-500 hover:text-brand-green transition-colors"
+                    title="Send notification"
+                  >
+                    <Mail size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 sm:gap-4">
         {[
-          { label: 'Eligible',        value: validEntries.length,                              color: 'text-white' },
-          { label: 'Total Tickets',   value: pool.length,                                       color: 'text-brand-green' },
-          { label: 'Blocked',         value: entries.filter((e) => e.suspicious).length,        color: 'text-red-400' },
+          { label: 'Eligible',      value: eligibleEntries.length,                          color: 'text-white' },
+          { label: 'Total Tickets', value: pool.length,                                      color: 'text-brand-green' },
+          { label: 'Blocked',       value: entries.filter((e) => e.suspicious).length,       color: 'text-red-400' },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-dark-800 border border-dark-500 rounded-xl p-3 sm:p-4 text-center">
             <p className={`text-2xl font-bold ${color}`}>{value}</p>
@@ -213,51 +323,71 @@ export default function WinnerPicker() {
         ))}
       </div>
 
-      {/* Mode toggle */}
-      <div className="flex items-center gap-1 bg-dark-800 border border-dark-500 rounded-xl p-1 w-fit">
-        {[
-          { id: 'wheel', label: 'Spin Wheel' },
-          { id: 'quick', label: 'Quick Pick' },
-        ].map(({ id, label }) => (
+      {/* All winners picked — show announce CTA */}
+      {allPicked && (
+        <div className="bg-brand-green/10 border border-brand-green/30 rounded-xl p-5 text-center space-y-3">
+          <p className="text-sm font-bold text-brand-green flex items-center justify-center gap-2">
+            <Trophy size={16} /> All {numberOfWinners} winner{numberOfWinners > 1 ? 's' : ''} selected!
+          </p>
+          <p className="text-xs text-dark-400">Ready to announce publicly and notify winners.</p>
           <button
-            key={id}
-            onClick={() => setMode(id)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              mode === id ? 'bg-brand-green text-dark-900' : 'text-dark-400 hover:text-white'
-            }`}
+            onClick={handleAnnounce}
+            className="flex items-center gap-2 px-6 py-2.5 bg-brand-green text-dark-900 font-bold rounded-xl text-sm hover:bg-brand-green/80 transition-colors mx-auto"
           >
-            {label}
+            Announce Winners <ChevronRight size={14} />
           </button>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Mode toggle — hidden when all picked */}
+      {!allPicked && (
+        <div className="flex items-center gap-1 bg-dark-800 border border-dark-500 rounded-xl p-1 w-fit">
+          {[
+            { id: 'wheel', label: 'Spin Wheel' },
+            { id: 'quick', label: 'Quick Pick' },
+          ].map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setMode(id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                mode === id ? 'bg-brand-green text-dark-900' : 'text-dark-400 hover:text-white'
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── SPIN WHEEL MODE ── */}
-      {mode === 'wheel' && !winner && (
+      {mode === 'wheel' && !allPicked && (
         <div className="bg-dark-800 border border-dark-500 rounded-xl p-6 sm:p-8 flex flex-col items-center">
-          <SpinWheel entries={validEntries} onWinner={handleWheelWinner} />
+          <SpinWheel entries={eligibleEntries} onWinner={handleWheelWinner} disabled={allPicked} />
         </div>
       )}
 
       {/* ── QUICK PICK MODE ── */}
-      {mode === 'quick' && !winner && (
+      {mode === 'quick' && !allPicked && (
         <div className="bg-dark-800 border border-dark-500 rounded-xl p-8 text-center">
           {!spinning ? (
             <>
               <div className="w-20 h-20 rounded-full bg-dark-700 border-2 border-dashed border-dark-500 flex items-center justify-center mx-auto mb-6">
                 <Trophy size={32} className="text-dark-400" />
               </div>
-              <h2 className="text-lg font-bold text-white mb-2">Ready to Pick a Winner?</h2>
+              <h2 className="text-lg font-bold text-white mb-2">
+                {pickedCount === 0 ? 'Ready to Pick a Winner?' : `Pick Winner ${pickedCount + 1} of ${numberOfWinners}`}
+              </h2>
               <p className="text-sm text-dark-400 mb-6">
                 Weighted random selection — more tickets = higher odds. Suspicious entries excluded.
               </p>
               <button
                 onClick={handleQuickPick}
-                disabled={!validEntries.length}
+                disabled={!eligibleEntries.length}
                 className="px-8 py-3 bg-brand-green text-dark-900 font-bold rounded-xl hover:bg-brand-green/80 transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-sm"
               >
-                Pick Winner Now
+                Pick Winner {numberOfWinners > 1 ? `#${pickedCount + 1}` : 'Now'}
               </button>
-              {!validEntries.length && <p className="text-xs text-red-400 mt-3">No valid entries</p>}
+              {!eligibleEntries.length && <p className="text-xs text-red-400 mt-3">No eligible entries remaining</p>}
             </>
           ) : (
             <div className="py-8">
@@ -268,7 +398,7 @@ export default function WinnerPicker() {
               <p className="text-sm text-dark-400">Selecting from {pool.length} tickets</p>
               <div className="mt-6 bg-dark-700 rounded-lg p-3 overflow-hidden h-10">
                 <div className="flex gap-3 animate-bounce text-xs text-dark-400">
-                  {validEntries.slice(0, 6).map((e, i) => <span key={i} className="whitespace-nowrap">{e.name}</span>)}
+                  {eligibleEntries.slice(0, 6).map((e, i) => <span key={i} className="whitespace-nowrap">{e.name}</span>)}
                 </div>
               </div>
             </div>
@@ -276,8 +406,8 @@ export default function WinnerPicker() {
         </div>
       )}
 
-      {/* ── WINNER RESULT (both modes) ── */}
-      {winner && (
+      {/* ── LATEST WINNER CARD (single winner mode only) ── */}
+      {winner && numberOfWinners === 1 && (
         <div className="bg-dark-800 border border-dark-500 rounded-xl p-6 sm:p-8 text-center">
           <div className="w-20 h-20 rounded-full bg-brand-green/10 border-2 border-brand-green flex items-center justify-center mx-auto mb-5">
             <Trophy size={32} className="text-brand-green" />
@@ -311,120 +441,82 @@ export default function WinnerPicker() {
             <p className="text-[11px] text-dark-400 mt-1">Share this URL publicly to prove the draw was fair</p>
           </div>
 
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="w-full max-w-sm mx-auto space-y-3 mb-2">
-              {/* Claim link */}
-              <div className="bg-dark-700 rounded-xl border border-dark-600 p-3">
-                <p className="text-[10px] text-dark-400 mb-1.5">Winner Claim Link — send this to {winner.name}</p>
-                <div className="flex items-center gap-2">
-                  <code className="text-xs text-brand-green flex-1 truncate">{`${window.location.origin}/claim/${activeCampaign?.id}`}</code>
-                  <button
-                    type="button"
-                    onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/claim/${activeCampaign?.id}`); setNotified(true); setTimeout(() => setNotified(false), 2000) }}
-                    className="shrink-0 text-dark-400 hover:text-white transition-colors"
-                  >
-                    {notified ? <Check size={13} className="text-brand-green" /> : <Copy size={13} />}
-                  </button>
-                </div>
+          <div className="w-full max-w-sm mx-auto space-y-3 mb-4">
+            <div className="bg-dark-700 rounded-xl border border-dark-600 p-3">
+              <p className="text-[10px] text-dark-400 mb-1.5">Winner Claim Link</p>
+              <div className="flex items-center gap-2">
+                <code className="text-xs text-brand-green flex-1 truncate">{`${window.location.origin}/claim/${activeCampaign?.id}`}</code>
+                <button
+                  type="button"
+                  onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/claim/${activeCampaign?.id}`); setNotified(true); setTimeout(() => setNotified(false), 2000) }}
+                  className="shrink-0 text-dark-400 hover:text-white transition-colors"
+                >
+                  {notified ? <Check size={13} className="text-brand-green" /> : <Copy size={13} />}
+                </button>
               </div>
-              {/* Email winner */}
-              <button
-                type="button"
-                onClick={() => setShowEmailModal(true)}
-                className="flex items-center justify-center gap-2 w-full px-5 py-2.5 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors"
-              >
-                <Mail size={14} /> Send Winner Notification
-              </button>
             </div>
-            <button onClick={() => { clearWinner(); setNotified(false) }}
-              className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-sm transition-colors">
-              <RefreshCw size={14} /> Pick Again
+            <button
+              type="button"
+              onClick={() => setEmailModalWinner(winner)}
+              className="flex items-center justify-center gap-2 w-full px-5 py-2.5 bg-brand-green text-dark-900 font-semibold rounded-lg text-sm hover:bg-brand-green/80 transition-colors"
+            >
+              <Mail size={14} /> Send Winner Notification
+            </button>
+            <button
+              onClick={handleAnnounce}
+              className="flex items-center justify-center gap-2 w-full px-5 py-2.5 border border-brand-green/40 text-brand-green rounded-lg text-sm hover:bg-brand-green/10 transition-colors"
+            >
+              Announce Winner <ChevronRight size={14} />
             </button>
           </div>
+          <button onClick={() => { clearWinner(); setNotified(false) }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-dark-700 border border-dark-500 text-dark-400 hover:text-white rounded-lg text-sm transition-colors mx-auto">
+            <RefreshCw size={14} /> Pick Again
+          </button>
         </div>
       )}
 
-      {/* ── Email Notification Modal ── */}
-      {showEmailModal && winner && (() => {
-        const claimLink = `${window.location.origin}/claim/${activeCampaign?.id}`
-        const subject = `Congratulations! You won ${activeCampaign?.prize || 'our giveaway'}!`
-        const body = `Hi ${winner.name},\n\nCongratulations! You've been selected as the winner of our "${activeCampaign?.title || 'giveaway'}" giveaway!\n\nPrize: ${activeCampaign?.prize || ''}${activeCampaign?.prizeValue ? ` (valued at $${activeCampaign.prizeValue})` : ''}\n\nPlease visit the link below to claim your prize and submit your shipping address:\n${claimLink}\n\nThis link expires in 7 days. If you have any questions, reply to this email.\n\nCongratulations again!\n`
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&to=${encodeURIComponent(winner.email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-        const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(winner.email)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-        const copyEmail = () => {
-          navigator.clipboard.writeText(`To: ${winner.email}\nSubject: ${subject}\n\n${body}`)
-          setEmailCopied(true); setTimeout(() => setEmailCopied(false), 2000)
-        }
-        return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4">
-            <div className="bg-dark-800 border border-dark-500 rounded-2xl w-full max-w-lg">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-dark-600">
-                <p className="text-sm font-bold text-white flex items-center gap-2"><Mail size={14} className="text-brand-green" /> Notify Winner</p>
-                <button onClick={() => setShowEmailModal(false)} className="text-dark-400 hover:text-white transition-colors"><X size={16} /></button>
-              </div>
-              <div className="p-5 space-y-4">
-                {/* Recipient */}
-                <div className="bg-dark-700 rounded-xl p-3">
-                  <p className="text-[10px] text-dark-400 mb-0.5">To</p>
-                  <p className="text-sm font-semibold text-white">{winner.name} <span className="text-dark-400 font-normal">— {winner.email}</span></p>
-                </div>
-                {/* Subject */}
-                <div className="bg-dark-700 rounded-xl p-3">
-                  <p className="text-[10px] text-dark-400 mb-0.5">Subject</p>
-                  <p className="text-sm text-white">{subject}</p>
-                </div>
-                {/* Body preview */}
-                <div className="bg-dark-700 rounded-xl p-3">
-                  <p className="text-[10px] text-dark-400 mb-1">Message</p>
-                  <pre className="text-xs text-dark-300 whitespace-pre-wrap font-sans leading-relaxed max-h-40 overflow-y-auto">{body}</pre>
-                </div>
-                {/* Actions */}
-                <div className="space-y-2">
-                  <p className="text-[10px] text-dark-400 uppercase tracking-wider">Send via</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <a href={gmailUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-red-600 hover:bg-red-500 text-white font-semibold rounded-lg text-xs transition-colors">
-                      <Mail size={13} /> Open in Gmail
-                    </a>
-                    <a href={outlookUrl} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-xs transition-colors">
-                      <Mail size={13} /> Open in Outlook
-                    </a>
-                  </div>
-                  <button onClick={copyEmail}
-                    className="flex items-center justify-center gap-2 w-full px-3 py-2.5 bg-dark-700 border border-dark-500 hover:border-dark-400 text-white rounded-lg text-xs transition-colors">
-                    {emailCopied ? <><Check size={13} className="text-brand-green" /> Copied!</> : <><Copy size={13} /> Copy Full Email to Clipboard</>}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })()}
-
       {/* Eligible list */}
       <div className="bg-dark-800 border border-dark-500 rounded-xl p-5">
-        <h3 className="text-sm font-semibold text-white mb-3">Eligible Participants ({validEntries.length})</h3>
+        <h3 className="text-sm font-semibold text-white mb-3">Eligible Participants ({eligibleEntries.length})</h3>
         <div className="space-y-2 max-h-64 overflow-y-auto">
-          {validEntries.map((e) => (
-            <div key={e.id} className={`flex items-center justify-between p-2.5 rounded-lg ${winner?.email === e.email ? 'bg-brand-green/10 border border-brand-green/30' : 'bg-dark-700'}`}>
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="w-6 h-6 rounded-full bg-dark-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-                  {e.name[0]}
+          {validEntries.map((e) => {
+            const isWinner = winners.some((w) => w.email === e.email)
+            const winnerIndex = winners.findIndex((w) => w.email === e.email)
+            return (
+              <div key={e.id} className={`flex items-center justify-between p-2.5 rounded-lg ${isWinner ? 'bg-brand-green/10 border border-brand-green/30' : 'bg-dark-700'}`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-6 h-6 rounded-full bg-dark-600 flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+                    {e.name[0]}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-white truncate">{e.name}</p>
+                    <p className="text-[10px] text-dark-400 truncate">{e.email}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-white truncate">{e.name}</p>
-                  <p className="text-[10px] text-dark-400 truncate">{e.email}</p>
+                <div className="flex items-center gap-2 shrink-0">
+                  {isWinner && (
+                    <span className="flex items-center gap-1 text-[10px] text-brand-green">
+                      <Trophy size={11} />
+                      {numberOfWinners > 1 ? `#${winnerIndex + 1}` : ''}
+                    </span>
+                  )}
+                  <span className="text-xs font-semibold text-dark-400">{e.entries}×</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {winner?.email === e.email && <Trophy size={12} className="text-brand-green" />}
-                <span className="text-xs font-semibold text-dark-400">{e.entries}×</span>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </div>
+
+      {/* Email modal */}
+      {emailModalWinner && (
+        <EmailModal
+          winner={emailModalWinner}
+          activeCampaign={activeCampaign}
+          onClose={() => setEmailModalWinner(null)}
+        />
+      )}
     </div>
   )
 }
