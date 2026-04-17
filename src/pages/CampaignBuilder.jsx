@@ -278,6 +278,9 @@ export default function CampaignBuilder() {
     // Email confirmation
     emailConfirmAddress: '',
     emailConfirmDisplayName: '',
+    emailConfirmEnabled: false,
+    emailConfirmMethod: 'link',
+    emailConfirmExpiry: '24h',
     // Tracking scripts
     fbPixelId: '',
     gaId: '',
@@ -744,10 +747,96 @@ export default function CampaignBuilder() {
             <input type="text" value={form.emailConfirmDisplayName} onChange={(e) => set('emailConfirmDisplayName', e.target.value)} placeholder="add a name" className={inputCls} />
           </InputField>
           <div>
-            <label className="block text-xs text-dark-400 mb-1.5">Confirm E-mail</label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-dark-700/50 border border-dark-600 rounded-lg">
-              <Lock size={13} className="text-amber-400 shrink-0" />
-              <span className="text-xs text-amber-400">Available paid plans, upgrade now!</span>
+            {/* Confirm E-mail toggle */}
+            <div className="rounded-xl border border-dark-600 bg-dark-700/30 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-dark-600/60">
+                <div>
+                  <p className="text-sm font-semibold text-white">Confirm E-mail</p>
+                  <p className="text-xs text-dark-400 mt-0.5">Require entrants to verify their email address before counting their entry</p>
+                </div>
+                <Toggle checked={form.emailConfirmEnabled} onChange={() => set('emailConfirmEnabled', !form.emailConfirmEnabled)} />
+              </div>
+
+              {form.emailConfirmEnabled && (
+                <div className="px-4 py-4 space-y-4">
+
+                  {/* Method selector */}
+                  <div>
+                    <p className="text-xs text-dark-400 mb-2 font-semibold uppercase tracking-wider">Confirmation Method</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { value: 'link', label: 'Click Link', desc: 'Entrant clicks a link in their email to confirm', icon: '🔗' },
+                        { value: 'pin',  label: 'Enter PIN',  desc: '4-digit PIN sent via email, typed on the page', icon: '🔢' },
+                      ].map((m) => (
+                        <button
+                          key={m.value}
+                          type="button"
+                          onClick={() => set('emailConfirmMethod', m.value)}
+                          className={`text-left p-3 rounded-lg border transition-colors ${
+                            form.emailConfirmMethod === m.value
+                              ? 'border-brand-green bg-brand-green/10 text-white'
+                              : 'border-dark-500 text-dark-400 hover:border-dark-400 hover:text-dark-200'
+                          }`}
+                        >
+                          <div className="text-base mb-1">{m.icon}</div>
+                          <div className="text-xs font-semibold">{m.label}</div>
+                          <div className="text-[10px] mt-0.5 opacity-75">{m.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Flow preview */}
+                  <div className="bg-dark-900/60 border border-dark-700 rounded-lg p-3">
+                    <p className="text-xs font-semibold text-dark-400 uppercase tracking-wider mb-2">Entry Flow</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {[
+                        'Enter email',
+                        form.emailConfirmMethod === 'pin' ? 'Receive PIN via email' : 'Receive confirmation email',
+                        form.emailConfirmMethod === 'pin' ? 'Type PIN on page' : 'Click confirm link',
+                        'Entry counted ✓',
+                      ].map((step, i, arr) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-5 h-5 rounded-full bg-brand-green/20 text-brand-green text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                            <span className="text-xs text-dark-300 whitespace-nowrap">{step}</span>
+                          </div>
+                          {i < arr.length - 1 && <span className="text-dark-600 text-xs">→</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Requires email address warning */}
+                  {!form.emailConfirmAddress && (
+                    <div className="flex items-start gap-2 px-3 py-2.5 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                      <AlertTriangle size={13} className="text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-300">
+                        Set your <strong>e-mail address</strong> above — confirmation emails will be sent from that address.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Expiry */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-white">Confirmation expires after</p>
+                      <p className="text-xs text-dark-400 mt-0.5">Unconfirmed entries are discarded after this time</p>
+                    </div>
+                    <select
+                      value={form.emailConfirmExpiry || '24h'}
+                      onChange={(e) => set('emailConfirmExpiry', e.target.value)}
+                      className="bg-dark-700 border border-dark-500 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-brand-green"
+                    >
+                      <option value="1h">1 hour</option>
+                      <option value="6h">6 hours</option>
+                      <option value="24h">24 hours</option>
+                      <option value="48h">48 hours</option>
+                      <option value="72h">72 hours</option>
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
