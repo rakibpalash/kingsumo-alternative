@@ -3,7 +3,7 @@ import {
   Gift, Zap, Shield, BarChart2, Users, Link2, Trophy,
   Code2, Layers, ChevronDown, ChevronUp,
   Globe, Key, Upload, Cpu, Database, Star, Repeat2, Languages,
-  MessageCircle, ShoppingCart, Instagram,
+  MessageCircle, ShoppingCart, Camera,
 } from 'lucide-react'
 
 // ── Translations ──────────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ const REALWORLD = [
   },
   {
     community: 'Instagram — Food & Lifestyle Community',
-    icon: <Instagram size={18} />,
+    icon: <Camera size={18} />,
     communityColor: 'text-pink-400',
     communityBg: 'bg-pink-400/10 border-pink-400/20',
     niche: 'Food Blogger / Content Creator',
